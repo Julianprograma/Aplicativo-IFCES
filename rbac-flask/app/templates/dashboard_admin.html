@@ -1,0 +1,59 @@
+{% extends 'layout.html' %}
+{% block title %}Panel Administrador{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>⚙️ Panel de Administrador</h2>
+  <p class="welcome">Bienvenido/a, <strong>{{ current_user.username }}</strong></p>
+</div>
+
+<div class="dashboard-stats">
+  <div class="stat-card">
+    <div class="stat-value">{{ usuarios|length }}</div>
+    <div class="stat-label">Total Usuarios</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ usuarios|selectattr('role', 'equalto', 'estudiante')|list|length }}</div>
+    <div class="stat-label">Estudiantes</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ usuarios|selectattr('role', 'equalto', 'profesor')|list|length }}</div>
+    <div class="stat-label">Profesores</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ usuarios|selectattr('role', 'equalto', 'admin')|list|length }}</div>
+    <div class="stat-label">Administradores</div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <div class="dashboard-card full-width">
+    <h3>👥 Todos los Usuarios</h3>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Registrado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in usuarios %}
+            <tr>
+              <td>{{ u.id }}</td>
+              <td>{{ u.username }}</td>
+              <td>{{ u.email }}</td>
+              <td><span class="badge badge-{{ u.role }}">{{ u.role }}</span></td>
+              <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else 'N/A' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="no-data">No hay usuarios registrados</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

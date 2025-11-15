@@ -1,0 +1,268 @@
+{% extends 'layout.html' %}
+{% block title %}Detalle Resultado - {{ examen.titulo }}{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>📝 Detalle del Resultado</h2>
+  <p class="welcome">{{ examen.titulo }} - {{ resultado.estudiante.username }}</p>
+</div>
+
+<div class="action-bar">
+  <a href="{{ url_for('profesor.ver_resultados', id=examen.id) }}" class="btn btn-secondary">← Volver a Resultados</a>
+</div>
+
+<!-- Información General del Resultado -->
+<div class="resultado-info-card">
+  <h3 style="margin-top:0;">📊 Información General</h3>
+  <div class="info-grid">
+    <div class="info-item">
+      <strong>Estudiante:</strong>
+      <span>{{ resultado.estudiante.username }}</span>
+    </div>
+    <div class="info-item">
+      <strong>Calificación:</strong>
+      <span class="calificacion-badge {% if resultado.calificacion/resultado.total_puntos >= 0.6 %}badge-success{% else %}badge-danger{% endif %}">
+        {{ "%.2f"|format(resultado.calificacion) }} / {{ "%.2f"|format(resultado.total_puntos) }}
+        ({{ "%.1f"|format((resultado.calificacion/resultado.total_puntos*100) if resultado.total_puntos > 0 else 0) }}%)
+      </span>
+    </div>
+    <div class="info-item">
+      <strong>Fecha Presentación:</strong>
+      <span>{{ resultado.fecha_presentacion.strftime('%d/%m/%Y %H:%M') if resultado.fecha_presentacion else resultado.fecha_fin.strftime('%d/%m/%Y %H:%M') if resultado.fecha_fin else '-' }}</span>
+    </div>
+    <div class="info-item">
+      <strong>Tiempo Empleado:</strong>
+      <span>
+        {% if resultado.fecha_inicio and resultado.fecha_fin %}
+          {% set duracion = resultado.fecha_fin - resultado.fecha_inicio %}
+          {{ duracion.seconds // 60 }} minutos
+        {% else %}
+          -
+        {% endif %}
+      </span>
+    </div>
+    <div class="info-item">
+      <strong>Estado:</strong>
+      <span>
+        {% if resultado.completado %}
+          {% set porcentaje = (resultado.calificacion / resultado.total_puntos * 100) if resultado.total_puntos > 0 else 0 %}
+          {% if porcentaje >= 60 %}
+            <span class="badge badge-success">✅ Aprobado</span>
+          {% else %}
+            <span class="badge badge-danger">❌ Reprobado</span>
+          {% endif %}
+        {% else %}
+          <span class="badge badge-warning">⏳ En progreso</span>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Formulario de Comentarios -->
+<div class="comentarios-card">
+  <h3 style="margin-top:0;">💬 Retroalimentación del Profesor</h3>
+  <form method="POST" action="{{ url_for('profesor.agregar_comentario', id=resultado.id) }}">
+    <div class="form-group">
+      <label for="comentario_profesor">Comentario General</label>
+      <textarea 
+        name="comentario_profesor" 
+        id="comentario_profesor" 
+        rows="5" 
+        class="form-control"
+        placeholder="Escribe aquí tus observaciones sobre el desempeño del estudiante..."
+      >{{ resultado.comentario_profesor or '' }}</textarea>
+      <small class="form-text">Aquí puedes detallar fortalezas, debilidades y observaciones generales.</small>
+    </div>
+    
+    <div class="form-group">
+      <label for="recomendaciones">Recomendaciones</label>
+      <textarea 
+        name="recomendaciones" 
+        id="recomendaciones" 
+        rows="5" 
+        class="form-control"
+        placeholder="Escribe recomendaciones específicas para mejorar..."
+      >{{ resultado.recomendaciones or '' }}</textarea>
+      <small class="form-text">Sugiere temas a reforzar, recursos adicionales o ejercicios recomendados.</small>
+    </div>
+    
+    <div style="text-align:right;margin-top:20px;">
+      <button type="submit" class="btn btn-primary" style="font-size:1rem;padding:12px 24px;">
+        💾 Guardar Comentarios
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Resumen de Respuestas (Opcional - para ver respuestas del estudiante) -->
+<div class="respuestas-card">
+  <h3 style="margin-top:0;">📋 Preguntas del Examen</h3>
+  <p class="text-muted">Total de preguntas: {{ preguntas|length }}</p>
+  
+  {% if preguntas %}
+    <div class="preguntas-resumen">
+      {% for pregunta in preguntas %}
+        <div class="pregunta-item">
+          <div class="pregunta-header">
+            <span class="pregunta-numero">Pregunta {{ pregunta.orden }}</span>
+            <span class="badge" style="background:{% if pregunta.nivel_dificultad == 'básico' %}#4caf50{% elif pregunta.nivel_dificultad == 'intermedio' %}#ff9800{% else %}#f44336{% endif %};color:#fff;">
+              {{ pregunta.nivel_dificultad|capitalize }}
+            </span>
+            <span class="badge badge-info">{{ pregunta.puntos }} pts</span>
+          </div>
+          <p class="pregunta-texto">{{ pregunta.texto }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No hay preguntas disponibles.</p>
+  {% endif %}
+</div>
+
+<style>
+.resultado-info-card,
+.comentarios-card,
+.respuestas-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.info-item {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item strong {
+  font-size: 0.85rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item span {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.calificacion-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.badge-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-danger {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.badge-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #2196f3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.form-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+.preguntas-resumen {
+  margin-top: 16px;
+}
+
+.pregunta-item {
+  background: #f8f9fa;
+  border-left: 4px solid #2196f3;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+}
+
+.pregunta-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pregunta-numero {
+  font-weight: 600;
+  color: #2196f3;
+}
+
+.pregunta-texto {
+  margin: 0;
+  color: #333;
+  line-height: 1.6;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.badge-info {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.text-muted {
+  color: #666;
+  font-style: italic;
+}
+</style>
+{% endblock %}

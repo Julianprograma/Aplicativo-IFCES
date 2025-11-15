@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+{% block title %}Registro{% endblock %}
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h2>Crear cuenta</h2>
+      <p class="subtitle">Únete a la plataforma IFCES</p>
+    </div>
+    
+    <form method="post" class="form auth-form">
+      <div class="input-group">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" type="text" placeholder="Tu nombre de usuario" required />
+      </div>
+      
+      <div class="input-group">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="tu@email.com" required />
+      </div>
+      
+      <div class="input-group">
+        <label for="password">Contraseña</label>
+        <input id="password" name="password" type="password" placeholder="Mínimo 6 caracteres" minlength="6" required />
+      </div>
+      
+      <fieldset class="role-selection">
+        <legend>Selecciona tu rol</legend>
+        <label class="radio-label">
+          <input type="radio" name="role" value="estudiante" checked />
+          <span class="radio-text">
+            <strong>Estudiante</strong>
+            <small>Acceso a cursos y materiales</small>
+          </span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="role" value="profesor" />
+          <span class="radio-text">
+            <strong>Profesor</strong>
+            <small>Gestión de estudiantes y contenidos</small>
+          </span>
+        </label>
+      </fieldset>
+      
+      <button class="btn btn-primary btn-block" type="submit">Registrarme</button>
+    </form>
+    
+    <div class="auth-footer">
+      <p>¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}" class="link-primary">Inicia sesión aquí</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

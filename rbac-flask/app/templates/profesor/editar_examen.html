@@ -1,0 +1,83 @@
+{% extends 'layout.html' %}
+{% block title %}Editar Examen - {{ examen.titulo }}{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>✏️ Editar Examen</h2>
+  <p class="welcome">Modifica la configuración del examen</p>
+</div>
+
+<div class="form-container">
+  <form method="post" class="form-horizontal">
+    <div class="form-group">
+      <label for="titulo">Título del Examen *</label>
+      <input type="text" name="titulo" id="titulo" required class="form-control" value="{{ examen.titulo }}">
+    </div>
+
+    <div class="form-group">
+      <label for="categoria_id">Categoría / Materia 📚</label>
+      <select name="categoria_id" id="categoria_id" class="form-control">
+        <option value="">Sin categoría</option>
+        {% for cat in categorias %}
+          <option value="{{ cat.id }}" {{ 'selected' if examen.categoria_id == cat.id }}>
+            {{ cat.icono }} {{ cat.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+      <small>Clasifica el examen por tema o materia</small>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">Descripción</label>
+      <textarea name="descripcion" id="descripcion" rows="4" class="form-control">{{ examen.descripcion or '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="duracion_minutos">Duración (minutos)</label>
+      <input type="number" name="duracion_minutos" id="duracion_minutos" min="1" class="form-control" value="{{ examen.duracion_minutos or 60 }}">
+      <small>Tiempo máximo para completar el examen</small>
+    </div>
+
+    <div class="form-group">
+      <label for="fecha_limite">Fecha límite</label>
+      <input type="datetime-local" name="fecha_limite" id="fecha_limite" class="form-control" 
+             value="{{ examen.fecha_limite.strftime('%Y-%m-%dT%H:%M') if examen.fecha_limite }}">
+      <small>Fecha y hora máxima para presentar el examen</small>
+    </div>
+
+    <fieldset class="configuraciones-avanzadas">
+      <legend>⚙️ Configuraciones Avanzadas</legend>
+      
+      <div class="form-group">
+        <label for="intentos_maximos">Intentos máximos</label>
+        <input type="number" name="intentos_maximos" id="intentos_maximos" min="1" class="form-control" value="{{ examen.intentos_maximos or 1 }}">
+        <small>Número de veces que un estudiante puede presentar el examen</small>
+      </div>
+
+      <div class="form-group">
+        <label for="calificacion_minima">Calificación mínima para aprobar (%)</label>
+        <input type="number" name="calificacion_minima" id="calificacion_minima" min="0" max="100" step="0.1" class="form-control" value="{{ examen.calificacion_minima or 60.0 }}">
+        <small>Porcentaje mínimo para considerar aprobado</small>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="mostrar_respuestas" {{ 'checked' if examen.mostrar_respuestas }}>
+          <span>Mostrar respuestas correctas después de completar</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="barajar_preguntas" {{ 'checked' if examen.barajar_preguntas }}>
+          <span>Barajar orden de preguntas para cada estudiante</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <a href="{{ url_for('profesor.lista_examenes') }}" class="btn btn-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}IFCES Plataforma{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="brand">IFCES</div>
+    <ul class="nav-links">
+      <li><a href="/">Inicio</a></li>
+      {% if current_user.is_authenticated %}
+        {% if current_user.role == 'estudiante' %}
+          <li><a href="{{ url_for('main.dashboard_estudiante') }}">Mi Panel</a></li>
+        {% elif current_user.role == 'profesor' %}
+          <li><a href="{{ url_for('main.dashboard_profesor') }}">Panel Profesor</a></li>
+          <li><a href="{{ url_for('profesor.lista_estudiantes') }}">Estudiantes</a></li>
+          <li><a href="{{ url_for('profesor.lista_examenes') }}">Exámenes</a></li>
+        {% elif current_user.role == 'admin' %}
+          <li><a href="{{ url_for('main.dashboard_admin') }}">Panel Admin</a></li>
+          <li><a href="{{ url_for('main.usuarios') }}">Usuarios</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('auth.logout') }}">Salir</a></li>
+      {% else %}
+        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+        <li><a href="{{ url_for('auth.register') }}">Registro</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, msg in messages %}
+            <div class="flash {{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">&copy; 2025 IFCES Plataforma Educativa</footer>
+</body>
+</html>

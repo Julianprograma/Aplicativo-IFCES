@@ -1,0 +1,112 @@
+{% extends 'layout.html' %}
+{% block title %}Panel Estudiante{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>🎓 Panel de Estudiante</h2>
+  <p class="welcome">Bienvenido/a, <strong>{{ current_user.username }}</strong></p>
+</div>
+
+<!-- Estadísticas Rápidas -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center bg-primary text-white shadow-sm">
+      <div class="card-body">
+        <i class="bi bi-file-earmark-text fs-1"></i>
+        <h3 class="mt-2">{{ total_asignados }}</h3>
+        <p class="mb-0">Exámenes Asignados</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center bg-success text-white shadow-sm">
+      <div class="card-body">
+        <i class="bi bi-check-circle fs-1"></i>
+        <h3 class="mt-2">{{ completados }}</h3>
+        <p class="mb-0">Completados</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center bg-info text-white shadow-sm">
+      <div class="card-body">
+        <i class="bi bi-graph-up fs-1"></i>
+        <h3 class="mt-2">{{ "%.1f"|format(promedio) }}%</h3>
+        <p class="mb-0">Promedio</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center bg-warning text-white shadow-sm">
+      <div class="card-body">
+        <i class="bi bi-clock fs-1"></i>
+        <h3 class="mt-2">{{ examenes_proximos|length }}</h3>
+        <p class="mb-0">Por Vencer</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Accesos Rápidos -->
+<div class="dashboard-grid">
+  <div class="dashboard-card">
+    <h3>📝 Mis Exámenes</h3>
+    <p>Presenta tus exámenes asignados</p>
+    <a href="{{ url_for('main.estudiante_examenes') }}" class="btn btn-primary">
+      <i class="bi bi-pencil-square"></i> Ver Exámenes
+    </a>
+  </div>
+  
+  <div class="dashboard-card">
+    <h3>📊 Mis Resultados</h3>
+    <p>Consulta tus calificaciones y avances</p>
+    <a href="{{ url_for('main.estudiante_resultados') }}" class="btn btn-info">
+      <i class="bi bi-bar-chart"></i> Ver Resultados
+    </a>
+  </div>
+  
+  <div class="dashboard-card">
+    <h3>⏰ Próximos a Vencer</h3>
+    {% if examenes_proximos %}
+      <ul class="exam-list">
+        {% for examen in examenes_proximos %}
+          <li>
+            <strong>{{ examen.titulo }}</strong>
+            <br>
+            <small class="text-muted">
+              <i class="bi bi-calendar"></i> 
+              {{ examen.fecha_limite.strftime('%d/%m/%Y %H:%M') }}
+            </small>
+          </li>
+        {% endfor %}
+      </ul>
+      <a href="{{ url_for('main.estudiante_examenes') }}" class="btn btn-warning">
+        Ver Todos
+      </a>
+    {% else %}
+      <p class="no-data">No hay exámenes próximos a vencer</p>
+    {% endif %}
+  </div>
+  
+  <div class="dashboard-card">
+    <h3>👤 Mi Perfil</h3>
+    <p><strong>Email:</strong> {{ current_user.email }}</p>
+    <p><strong>Rol:</strong> {{ current_user.role }}</p>
+    <p><strong>Estado:</strong> 
+      {% if current_user.is_active %}
+        <span class="badge badge-success">Activo</span>
+      {% else %}
+        <span class="badge badge-warning">Inactivo</span>
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- Alertas y Notificaciones -->
+{% if examenes_proximos %}
+<div class="alert alert-warning mt-4">
+  <i class="bi bi-exclamation-triangle"></i>
+  <strong>¡Atención!</strong> Tienes {{ examenes_proximos|length }} examen(es) próximo(s) a vencer.
+  <a href="{{ url_for('main.estudiante_examenes') }}" class="alert-link">Ver ahora</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+{% block title %}Mis Exámenes{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>📝 Mis Exámenes</h2>
+  <p class="welcome">Gestiona los exámenes que has creado</p>
+</div>
+
+<div class="action-bar">
+  <a href="{{ url_for('main.dashboard_profesor') }}" class="btn btn-secondary">← Volver al Dashboard</a>
+  <a href="{{ url_for('profesor.crear_examen') }}" class="btn btn-primary">➕ Crear Nuevo Examen</a>
+</div>
+
+<div class="examenes-grid">
+  {% for examen in examenes %}
+    <div class="examen-card">
+      <div class="examen-header">
+        <h3>{{ examen.titulo }}</h3>
+        <div>
+          {% if examen.publicado %}
+            <span class="badge badge-success">Publicado</span>
+          {% else %}
+            <span class="badge badge-warning">Borrador</span>
+          {% endif %}
+          <span class="badge badge-info">{{ examen.estudiantes.count() }} estudiantes</span>
+        </div>
+      </div>
+      <p class="examen-descripcion">{{ examen.descripcion or 'Sin descripción' }}</p>
+      <p class="examen-fecha">Creado: {{ examen.fecha_creacion.strftime('%d/%m/%Y') }}</p>
+      <p class="examen-fecha">
+        <strong>Preguntas:</strong> {{ examen.preguntas|length }} 
+        | <strong>Duración:</strong> {{ examen.duracion_minutos or 'Sin límite' }} min
+      </p>
+      
+      <div class="examen-actions">
+        <a href="{{ url_for('profesor.gestionar_preguntas', id=examen.id) }}" class="btn btn-sm btn-primary">
+          📝 Preguntas
+        </a>
+        <a href="{{ url_for('profesor.editar_examen', id=examen.id) }}" class="btn btn-sm" style="background:#f57c00;color:#fff;">
+          ✏️ Editar
+        </a>
+        <a href="{{ url_for('profesor.asignar_examen', id=examen.id) }}" class="btn btn-sm btn-secondary">
+          👥 Asignar
+        </a>
+        <a href="{{ url_for('profesor.ver_resultados', id=examen.id) }}" class="btn btn-sm" style="background:#01579b;color:#fff;">
+          📊 Resultados
+        </a>
+        <form method="post" action="{{ url_for('profesor.duplicar_examen', id=examen.id) }}" class="inline-form">
+          <button type="submit" class="btn btn-sm" style="background:#7b1fa2;color:#fff;">📋 Duplicar</button>
+        </form>
+        <form method="post" action="{{ url_for('profesor.eliminar_examen', id=examen.id) }}" 
+              onsubmit="return confirm('¿Eliminar el examen {{ examen.titulo }}?');" class="inline-form">
+          <button type="submit" class="btn btn-sm btn-danger">🗑️ Eliminar</button>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>📋 No has creado exámenes aún</p>
+      <a href="{{ url_for('profesor.crear_examen') }}" class="btn btn-primary">Crear mi primer examen</a>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

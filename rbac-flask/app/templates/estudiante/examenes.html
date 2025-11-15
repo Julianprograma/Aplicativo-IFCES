@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+
+{% block title %}Mis Exámenes - IFCES{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5">📝 Mis Exámenes</h1>
+        <a href="{{ url_for('main.dashboard_estudiante') }}" class="btn btn-outline-secondary">
+            ← Volver al Dashboard
+        </a>
+    </div>
+
+    {% if not examenes_info %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No tienes exámenes asignados en este momento.
+    </div>
+    {% else %}
+    
+    <!-- Filtros por Estado -->
+    <div class="btn-group mb-4" role="group">
+        <button type="button" class="btn btn-outline-primary active" data-filter="todos">
+            Todos ({{ examenes_info|length }})
+        </button>
+        <button type="button" class="btn btn-outline-success" data-filter="disponible">
+            Disponibles ({{ examenes_info|selectattr('estado', 'equalto', 'disponible')|list|length }})
+        </button>
+        <button type="button" class="btn btn-outline-warning" data-filter="por_vencer">
+            Por Vencer ({{ examenes_info|selectattr('estado', 'equalto', 'por_vencer')|list|length }})
+        </button>
+        <button type="button" class="btn btn-outline-info" data-filter="completado">
+            Completados ({{ examenes_info|selectattr('estado', 'equalto', 'completado')|list|length }})
+        </button>
+        <button type="button" class="btn btn-outline-danger" data-filter="vencido">
+            Vencidos ({{ examenes_info|selectattr('estado', 'equalto', 'vencido')|list|length }})
+        </button>
+    </div>
+
+    <!-- Lista de Exámenes -->
+    <div class="row">
+        {% for info in examenes_info %}
+        <div class="col-md-6 mb-4 examen-card" data-estado="{{ info.estado }}">
+            <div class="card h-100 shadow-sm {% if info.estado == 'por_vencer' %}border-warning{% elif info.estado == 'vencido' %}border-danger{% elif info.estado == 'completado' %}border-success{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ info.examen.titulo }}</h5>
+                    {% if info.estado == 'disponible' %}
+                        <span class="badge bg-primary">Disponible</span>
+                    {% elif info.estado == 'por_vencer' %}
+                        <span class="badge bg-warning">⚠️ Por Vencer</span>
+                    {% elif info.estado == 'vencido' %}
+                        <span class="badge bg-danger">❌ Vencido</span>
+                    {% elif info.estado == 'completado' %}
+                        <span class="badge bg-success">✅ Completado</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if info.examen.descripcion %}
+                    <p class="text-muted">{{ info.examen.descripcion }}</p>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-folder me-2 text-primary"></i>
+                            <strong>Categoría:</strong>
+                            <span class="badge ms-2" style="background-color: {{ info.examen.categoria.color if info.examen.categoria else '#6c757d' }}">
+                                {{ info.examen.categoria.icono if info.examen.categoria else '📚' }} {{ info.examen.categoria.nombre if info.examen.categoria else 'General' }}
+                            </span>
+                        </div>
+
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-clock me-2 text-primary"></i>
+                            <strong>Duración:</strong>
+                            <span class="ms-2">{{ info.examen.duracion_minutos }} minutos</span>
+                        </div>
+
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-list-ul me-2 text-primary"></i>
+                            <strong>Preguntas:</strong>
+                            <span class="ms-2">{{ info.examen.preguntas|length }}</span>
+                        </div>
+
+                        {% if info.examen.fecha_limite %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-calendar-event me-2 {% if info.estado == 'por_vencer' %}text-warning{% elif info.estado == 'vencido' %}text-danger{% else %}text-primary{% endif %}"></i>
+                            <strong>Fecha límite:</strong>
+                            <span class="ms-2 {% if info.estado == 'por_vencer' %}text-warning fw-bold{% elif info.estado == 'vencido' %}text-danger fw-bold{% endif %}">
+                                {{ info.examen.fecha_limite.strftime('%d/%m/%Y %H:%M') }}
+                                {% if info.dias_restantes is not none %}
+                                    ({{ info.dias_restantes }} días restantes)
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        {% if info.estado == 'completado' and info.resultado %}
+                        <div class="alert alert-success mt-3">
+                            <div class="d-flex justify-content-between">
+                                <span><strong>Tu calificación:</strong></span>
+                                <span class="fs-4 fw-bold">{{ "%.1f"|format(info.resultado.calificacion) }}%</span>
+                            </div>
+                            {% if info.fecha_completado %}
+                            <small class="text-muted">Completado el {{ info.fecha_completado.strftime('%d/%m/%Y %H:%M') }}</small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    {% if info.estado == 'disponible' or info.estado == 'por_vencer' %}
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('main.estudiante_presentar_examen', examen_id=info.examen.id) }}" 
+                               class="btn btn-primary flex-grow-1">
+                                <i class="bi bi-pencil-square"></i> 🚀 Iniciar Examen
+                            </a>
+                            <a href="{{ url_for('main.estudiante_modo_practica', examen_id=info.examen.id) }}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-book"></i> 🎯 Práctica
+                            </a>
+                        </div>
+                    {% elif info.estado == 'completado' %}
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('main.estudiante_detalle_resultado', resultado_id=info.resultado.id) }}" 
+                               class="btn btn-outline-info flex-grow-1">
+                                <i class="bi bi-eye"></i> Ver Resultados
+                            </a>
+                            <button class="btn btn-outline-success" 
+                                    onclick="solicitarCertificado({{ info.resultado.id }})">
+                                🏆 Certificado
+                            </button>
+                        </div>
+                    {% elif info.estado == 'vencido' %}
+                        <button class="btn btn-secondary w-100" disabled>
+                            <i class="bi bi-x-circle"></i> Examen Vencido
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Filtros de exámenes
+document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const filter = this.dataset.filter;
+        
+        // Actualizar botones activos
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Filtrar tarjetas
+        document.querySelectorAll('.examen-card').forEach(card => {
+            if (filter === 'todos' || card.dataset.estado === filter) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+});
+
+// Función para solicitar certificado
+function solicitarCertificado(resultadoId) {
+    if (confirm('¿Deseas generar tu certificado para este examen?')) {
+        fetch(`/estudiante/certificado/${resultadoId}/generar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('¡Certificado generado exitosamente!');
+                window.open(`/certificado/${data.codigo}`, '_blank');
+            } else {
+                alert(data.error || 'Error al generar el certificado');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al generar el certificado');
+        });
+    }
+}
+</script>
+{% endblock %}

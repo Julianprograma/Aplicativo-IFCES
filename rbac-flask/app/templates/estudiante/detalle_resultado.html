@@ -1,0 +1,211 @@
+{% extends "layout.html" %}
+
+{% block title %}Detalle de Resultado - IFCES{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5">📋 Detalle de Resultado</h1>
+        <a href="{{ url_for('main.estudiante_resultados') }}" class="btn btn-outline-secondary">
+            ← Volver a Resultados
+        </a>
+    </div>
+
+    <!-- Resumen del Resultado -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header {% if resultado.calificacion >= (resultado.examen.calificacion_minima or 60) %}bg-success{% else %}bg-danger{% endif %} text-white">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-0">{{ resultado.examen.titulo }}</h3>
+                    <p class="mb-0">
+                        {% if resultado.examen.categoria %}
+                        <span class="badge bg-light text-dark">
+                            {{ resultado.examen.categoria.icono }} {{ resultado.examen.categoria.nombre }}
+                        </span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="fs-1 fw-bold">{{ "%.1f"|format(resultado.calificacion) }}%</div>
+                    <div>
+                        {% if resultado.calificacion >= 90 %}
+                            <span class="badge bg-light text-success">🌟 Excelente</span>
+                        {% elif resultado.calificacion >= (resultado.examen.calificacion_minima or 60) %}
+                            <span class="badge bg-light text-primary">✓ Aprobado</span>
+                        {% else %}
+                            <span class="badge bg-light text-danger">✗ Reprobado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <p class="mb-2">
+                        <i class="bi bi-calendar text-primary"></i>
+                        <strong>Fecha:</strong> {{ resultado.fecha_presentacion.strftime('%d/%m/%Y %H:%M') if resultado.fecha_presentacion else 'N/A' }}
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <p class="mb-2">
+                        <i class="bi bi-clock text-primary"></i>
+                        <strong>Tiempo:</strong> {{ resultado.tiempo_utilizado // 60 if resultado.tiempo_utilizado else 0 }} minutos
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <p class="mb-2">
+                        <i class="bi bi-list-check text-primary"></i>
+                        <strong>Preguntas:</strong> {{ resultado.examen.preguntas|length }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comentarios del Profesor -->
+    {% if resultado.comentario_profesor or resultado.recomendaciones %}
+    <div class="card shadow-sm mb-4 border-info">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Retroalimentación del Profesor</h5>
+        </div>
+        <div class="card-body">
+            {% if resultado.comentario_profesor %}
+            <div class="mb-3">
+                <h6 class="text-primary">Comentario General:</h6>
+                <p class="border-start border-primary border-3 ps-3">{{ resultado.comentario_profesor }}</p>
+            </div>
+            {% endif %}
+            
+            {% if resultado.recomendaciones %}
+            <div>
+                <h6 class="text-success">Recomendaciones:</h6>
+                <div class="border-start border-success border-3 ps-3">
+                    {{ resultado.recomendaciones|safe }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Revisión de Preguntas -->
+    {% if resultado.examen.mostrar_respuestas %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-question-circle"></i> Revisión de Preguntas</h5>
+        </div>
+        <div class="card-body">
+            {% for pregunta in resultado.examen.preguntas %}
+            {% set respuesta_estudiante = resultado.respuestas|selectattr('pregunta_id', 'equalto', pregunta.id)|first %}
+            
+            <div class="mb-4 pb-4 {% if not loop.last %}border-bottom{% endif %}">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h6 class="mb-0">
+                        <span class="badge bg-secondary">Pregunta {{ loop.index }}</span>
+                        {% if pregunta.nivel_dificultad %}
+                        <span class="badge {% if pregunta.nivel_dificultad == 'basico' %}bg-success{% elif pregunta.nivel_dificultad == 'intermedio' %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ pregunta.nivel_dificultad|upper }}
+                        </span>
+                        {% endif %}
+                    </h6>
+                    {% if respuesta_estudiante %}
+                        {% if respuesta_estudiante.es_correcta %}
+                            <span class="badge bg-success fs-6">✓ Correcta</span>
+                        {% else %}
+                            <span class="badge bg-danger fs-6">✗ Incorrecta</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-secondary fs-6">Sin responder</span>
+                    {% endif %}
+                </div>
+
+                <p class="fs-6 mb-3">{{ pregunta.texto }}</p>
+
+                {% if pregunta.tipo == 'opcion_multiple' %}
+                    {% set opciones = pregunta.opciones|from_json %}
+                    <div class="opciones-resultado">
+                        {% for opcion in opciones %}
+                        <div class="p-3 mb-2 border rounded {% if opcion.correcta %}bg-success-subtle border-success{% elif respuesta_estudiante and respuesta_estudiante.respuesta_texto == opcion.texto and not opcion.correcta %}bg-danger-subtle border-danger{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>
+                                    <strong>{{ loop.index|chr_uppercase }})</strong> {{ opcion.texto }}
+                                </span>
+                                <div>
+                                    {% if opcion.correcta %}
+                                        <span class="badge bg-success">✓ Correcta</span>
+                                    {% endif %}
+                                    {% if respuesta_estudiante and respuesta_estudiante.respuesta_texto == opcion.texto %}
+                                        <span class="badge bg-info">Tu respuesta</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                {% elif pregunta.tipo == 'verdadero_falso' %}
+                    <div class="opciones-resultado">
+                        <div class="p-3 mb-2 border rounded {% if pregunta.respuesta_correcta == 'Verdadero' %}bg-success-subtle border-success{% elif respuesta_estudiante and respuesta_estudiante.respuesta_texto == 'Verdadero' and pregunta.respuesta_correcta != 'Verdadero' %}bg-danger-subtle border-danger{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><strong>✓</strong> Verdadero</span>
+                                <div>
+                                    {% if pregunta.respuesta_correcta == 'Verdadero' %}
+                                        <span class="badge bg-success">✓ Correcta</span>
+                                    {% endif %}
+                                    {% if respuesta_estudiante and respuesta_estudiante.respuesta_texto == 'Verdadero' %}
+                                        <span class="badge bg-info">Tu respuesta</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-3 mb-2 border rounded {% if pregunta.respuesta_correcta == 'Falso' %}bg-success-subtle border-success{% elif respuesta_estudiante and respuesta_estudiante.respuesta_texto == 'Falso' and pregunta.respuesta_correcta != 'Falso' %}bg-danger-subtle border-danger{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><strong>✗</strong> Falso</span>
+                                <div>
+                                    {% if pregunta.respuesta_correcta == 'Falso' %}
+                                        <span class="badge bg-success">✓ Correcta</span>
+                                    {% endif %}
+                                    {% if respuesta_estudiante and respuesta_estudiante.respuesta_texto == 'Falso' %}
+                                        <span class="badge bg-info">Tu respuesta</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                {% elif pregunta.tipo == 'abierta' %}
+                    <div class="alert alert-info">
+                        <strong>Tu respuesta:</strong>
+                        <p class="mb-0 mt-2">{{ respuesta_estudiante.respuesta_texto if respuesta_estudiante else 'Sin responder' }}</p>
+                    </div>
+                {% endif %}
+
+                <!-- Explicación de la pregunta (si existe) -->
+                {% if pregunta.explicacion %}
+                <div class="alert alert-light border-start border-primary border-3 mt-3">
+                    <strong><i class="bi bi-lightbulb text-warning"></i> Explicación:</strong>
+                    <p class="mb-0 mt-2">{{ pregunta.explicacion }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="bi bi-eye-slash"></i> El profesor ha configurado este examen para no mostrar las respuestas correctas.
+    </div>
+    {% endif %}
+
+    <!-- Botones de acción -->
+    <div class="text-center mb-5">
+        <a href="{{ url_for('main.estudiante_resultados') }}" class="btn btn-primary btn-lg">
+            Ver Todos Mis Resultados
+        </a>
+        <a href="{{ url_for('main.estudiante_examenes') }}" class="btn btn-outline-primary btn-lg ms-2">
+            Ver Exámenes Disponibles
+        </a>
+    </div>
+</div>
+{% endblock %}

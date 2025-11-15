@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+{% block title %}Preguntas - {{ examen.titulo }}{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>📝 Gestión de Preguntas</h2>
+  <p class="welcome">{{ examen.titulo }}</p>
+</div>
+
+<div class="action-bar">
+  <a href="{{ url_for('profesor.lista_examenes') }}" class="btn btn-secondary">← Volver a Exámenes</a>
+  <div>
+    <a href="{{ url_for('profesor.vista_previa_examen', id=examen.id) }}" class="btn" style="background:#0288d1;color:#fff;">
+      👁️ Vista Previa
+    </a>
+    <a href="{{ url_for('profesor.crear_pregunta', id=examen.id) }}" class="btn btn-primary">➕ Agregar Pregunta</a>
+    {% if preguntas and not examen.publicado %}
+      <form method="post" action="{{ url_for('profesor.publicar_examen', id=examen.id) }}" class="inline-form">
+        <button type="submit" class="btn btn-success">✅ Publicar Examen</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="examen-info-box">
+  <p><strong>Total de preguntas:</strong> {{ preguntas|length }}</p>
+  <p><strong>Puntos totales:</strong> {{ total_puntos }}</p>
+  <p><strong>Estado:</strong> 
+    {% if examen.publicado %}
+      <span class="badge badge-success">Publicado</span>
+    {% else %}
+      <span class="badge badge-warning">Borrador</span>
+    {% endif %}
+  </p>
+</div>
+
+{% if preguntas %}
+  <div class="preguntas-list">
+    {% for pregunta in preguntas %}
+      <div class="pregunta-item">
+        <div class="pregunta-header">
+          <span class="pregunta-numero">Pregunta {{ loop.index }}</span>
+          <span class="pregunta-tipo badge badge-info">{{ pregunta.tipo.replace('_', ' ').title() }}</span>
+          {% if pregunta.nivel_dificultad == 'basico' %}
+            <span class="badge badge-success">🟢 Básico</span>
+          {% elif pregunta.nivel_dificultad == 'intermedio' %}
+            <span class="badge badge-warning">🟡 Intermedio</span>
+          {% elif pregunta.nivel_dificultad == 'avanzado' %}
+            <span class="badge badge-danger">🔴 Avanzado</span>
+          {% endif %}
+          <span class="pregunta-puntos">{{ pregunta.puntos }} pts</span>
+          <span class="pregunta-tiempo">⏱️ {{ pregunta.tiempo_estimado }}s</span>
+        </div>
+        
+        <div class="pregunta-texto">{{ pregunta.texto }}</div>
+        
+        {% if pregunta.tipo == 'opcion_multiple' or pregunta.tipo == 'verdadero_falso' %}
+          <div class="pregunta-opciones">
+            {% set opciones = pregunta.opciones|from_json %}
+            <ul>
+              {% for opcion in opciones %}
+                <li class="{{ 'correcta' if opcion == pregunta.respuesta_correcta }}">
+                  {{ opcion }}
+                  {% if opcion == pregunta.respuesta_correcta %}✓{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% elif pregunta.tipo == 'abierta' %}
+          <div class="pregunta-respuesta-sugerida">
+            <small><strong>Respuesta sugerida:</strong> {{ pregunta.respuesta_correcta or 'No especificada' }}</small>
+          </div>
+        {% endif %}
+        
+        <div class="pregunta-actions">
+          <a href="{{ url_for('profesor.editar_pregunta', id=pregunta.id) }}" class="btn btn-sm" style="background:#f57c00;color:#fff;">
+            ✏️ Editar
+          </a>
+          <form method="post" action="{{ url_for('profesor.eliminar_pregunta', id=pregunta.id) }}" 
+                onsubmit="return confirm('¿Eliminar esta pregunta?');" class="inline-form">
+            <button type="submit" class="btn btn-sm btn-danger">🗑️ Eliminar</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <p>📋 No has agregado preguntas a este examen</p>
+    <a href="{{ url_for('profesor.crear_pregunta', id=examen.id) }}" class="btn btn-primary">Crear primera pregunta</a>
+  </div>
+{% endif %}
+{% endblock %}

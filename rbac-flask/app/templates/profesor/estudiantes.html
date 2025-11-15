@@ -1,0 +1,59 @@
+{% extends 'layout.html' %}
+{% block title %}Gestión de Estudiantes{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>👥 Gestión de Estudiantes</h2>
+  <p class="welcome">Administra los estudiantes registrados</p>
+</div>
+
+<div class="action-bar">
+  <a href="{{ url_for('main.dashboard_profesor') }}" class="btn btn-secondary">← Volver al Dashboard</a>
+</div>
+
+<div class="dashboard-card full-width">
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Email</th>
+          <th>Estado</th>
+          <th>Registrado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for estudiante in estudiantes %}
+          <tr class="{{ 'inactive-row' if not estudiante.is_active }}">
+            <td>{{ estudiante.id }}</td>
+            <td>{{ estudiante.username }}</td>
+            <td>{{ estudiante.email }}</td>
+            <td>
+              {% if estudiante.is_active %}
+                <span class="badge badge-success">Activo</span>
+              {% else %}
+                <span class="badge badge-warning">Inactivo</span>
+              {% endif %}
+            </td>
+            <td>{{ estudiante.created_at.strftime('%d/%m/%Y') if estudiante.created_at else 'N/A' }}</td>
+            <td class="action-cell">
+              <form method="post" action="{{ url_for('profesor.toggle_estudiante', id=estudiante.id) }}" style="display:inline;">
+                <button type="submit" class="btn-icon" title="{{ 'Desactivar' if estudiante.is_active else 'Activar' }}">
+                  {{ '🔒' if estudiante.is_active else '🔓' }}
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('profesor.eliminar_estudiante', id=estudiante.id) }}" 
+                    onsubmit="return confirm('¿Estás seguro de eliminar a {{ estudiante.username }}?');" style="display:inline;">
+                <button type="submit" class="btn-icon btn-danger" title="Eliminar">🗑️</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="no-data">No hay estudiantes registrados</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

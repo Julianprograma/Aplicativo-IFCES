@@ -1,0 +1,158 @@
+{% extends 'layout.html' %}
+{% block title %}Editar Pregunta{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>✏️ Editar Pregunta</h2>
+  <p class="welcome">{{ examen.titulo }}</p>
+</div>
+
+<form method="post" class="auth-form">
+  <div class="form-group">
+    <label for="texto">Enunciado de la pregunta *</label>
+    <textarea name="texto" id="texto" rows="4" required class="form-control">{{ pregunta.texto }}</textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="tipo">Tipo de pregunta *</label>
+    <select name="tipo" id="tipo" required class="form-control" onchange="cambiarTipoPregunta()">
+      <option value="opcion_multiple" {{ 'selected' if pregunta.tipo == 'opcion_multiple' }}>Opción Múltiple</option>
+      <option value="verdadero_falso" {{ 'selected' if pregunta.tipo == 'verdadero_falso' }}>Verdadero o Falso</option>
+      <option value="abierta" {{ 'selected' if pregunta.tipo == 'abierta' }}>Respuesta Abierta</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="puntos">Puntos *</label>
+    <input type="number" name="puntos" id="puntos" min="1" value="{{ pregunta.puntos }}" required class="form-control">
+  </div>
+
+  <!-- Opciones para Opción Múltiple -->
+  <div id="opcion_multiple_section" class="hidden-section">
+    <div class="form-group">
+      <label>Opciones de respuesta</label>
+      <div id="opciones_container">
+        {% if pregunta.tipo == 'opcion_multiple' %}
+          {% set opciones = pregunta.opciones|from_json %}
+          {% for opcion in opciones %}
+            <div class="opcion-item">
+              <input type="text" name="opcion_{{ loop.index }}" value="{{ opcion }}" placeholder="Opción {{ loop.index }}" class="form-control">
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="opcion-item">
+            <input type="text" name="opcion_1" placeholder="Opción 1" class="form-control">
+          </div>
+          <div class="opcion-item">
+            <input type="text" name="opcion_2" placeholder="Opción 2" class="form-control">
+          </div>
+        {% endif %}
+      </div>
+      <button type="button" onclick="agregarOpcion()" class="btn btn-sm btn-secondary">+ Agregar opción</button>
+    </div>
+    
+    <div class="form-group">
+      <label for="respuesta_correcta_om">Respuesta correcta *</label>
+      <select name="respuesta_correcta" id="respuesta_correcta_om" class="form-control">
+        <option value="">Selecciona la opción correcta</option>
+        {% if pregunta.tipo == 'opcion_multiple' %}
+          {% set opciones = pregunta.opciones|from_json %}
+          {% for opcion in opciones %}
+            <option value="{{ opcion }}" {{ 'selected' if opcion == pregunta.respuesta_correcta }}>{{ opcion }}</option>
+          {% endfor %}
+        {% endif %}
+      </select>
+    </div>
+  </div>
+
+  <!-- Opciones para Verdadero/Falso -->
+  <div id="verdadero_falso_section" class="hidden-section">
+    <div class="form-group">
+      <label>Respuesta correcta *</label>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="respuesta_correcta" value="Verdadero" {{ 'checked' if pregunta.respuesta_correcta == 'Verdadero' }}>
+          <span>Verdadero</span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="respuesta_correcta" value="Falso" {{ 'checked' if pregunta.respuesta_correcta == 'Falso' }}>
+          <span>Falso</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opciones para Respuesta Abierta -->
+  <div id="abierta_section" class="hidden-section">
+    <div class="form-group">
+      <label for="respuesta_sugerida">Respuesta sugerida (opcional)</label>
+      <textarea name="respuesta_correcta" id="respuesta_sugerida" rows="3" class="form-control" 
+                placeholder="Escribe una respuesta modelo o criterios de evaluación">{{ pregunta.respuesta_correcta if pregunta.tipo == 'abierta' }}</textarea>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <a href="{{ url_for('profesor.gestionar_preguntas', id=examen.id) }}" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+  </div>
+</form>
+
+<script>
+let opcionCounter = {{ (pregunta.opciones|from_json)|length if pregunta.tipo == 'opcion_multiple' else 2 }};
+
+function cambiarTipoPregunta() {
+  const tipo = document.getElementById('tipo').value;
+  
+  document.getElementById('opcion_multiple_section').classList.add('hidden-section');
+  document.getElementById('verdadero_falso_section').classList.add('hidden-section');
+  document.getElementById('abierta_section').classList.add('hidden-section');
+  
+  if (tipo === 'opcion_multiple') {
+    document.getElementById('opcion_multiple_section').classList.remove('hidden-section');
+    actualizarSelectRespuesta();
+  } else if (tipo === 'verdadero_falso') {
+    document.getElementById('verdadero_falso_section').classList.remove('hidden-section');
+  } else if (tipo === 'abierta') {
+    document.getElementById('abierta_section').classList.remove('hidden-section');
+  }
+}
+
+function agregarOpcion() {
+  opcionCounter++;
+  const container = document.getElementById('opciones_container');
+  const div = document.createElement('div');
+  div.className = 'opcion-item';
+  div.innerHTML = `<input type="text" name="opcion_${opcionCounter}" placeholder="Opción ${opcionCounter}" class="form-control" onchange="actualizarSelectRespuesta()">`;
+  container.appendChild(div);
+  actualizarSelectRespuesta();
+}
+
+function actualizarSelectRespuesta() {
+  const select = document.getElementById('respuesta_correcta_om');
+  const valorActual = select.value;
+  select.innerHTML = '<option value="">Selecciona la opción correcta</option>';
+  
+  const inputs = document.querySelectorAll('#opciones_container input[type="text"]');
+  inputs.forEach((input, index) => {
+    if (input.value.trim() !== '') {
+      const option = document.createElement('option');
+      option.value = input.value;
+      option.textContent = input.value;
+      if (input.value === valorActual) {
+        option.selected = true;
+      }
+      select.appendChild(option);
+    }
+  });
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+  cambiarTipoPregunta();
+  
+  const inputs = document.querySelectorAll('#opciones_container input[type="text"]');
+  inputs.forEach(input => {
+    input.addEventListener('input', actualizarSelectRespuesta);
+  });
+});
+</script>
+{% endblock %}

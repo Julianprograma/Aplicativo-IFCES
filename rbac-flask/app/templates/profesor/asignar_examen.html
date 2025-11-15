@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+{% block title %}Asignar Estudiantes - {{ examen.titulo }}{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>👥 Asignar Estudiantes</h2>
+  <p class="welcome">{{ examen.titulo }}</p>
+</div>
+
+<div class="action-bar">
+  <a href="{{ url_for('profesor.lista_examenes') }}" class="btn btn-secondary">← Volver a Exámenes</a>
+</div>
+
+<div class="form-container">
+  <form method="post" class="form-horizontal">
+    <div class="examen-info">
+      <p><strong>Descripción:</strong> {{ examen.descripcion or 'Sin descripción' }}</p>
+      <p><strong>Creado:</strong> {{ examen.fecha_creacion.strftime('%d/%m/%Y') }}</p>
+    </div>
+    
+    <fieldset class="estudiantes-selection">
+      <legend>Selecciona los estudiantes para este examen</legend>
+      
+      {% if estudiantes %}
+        <div class="checkbox-grid">
+          {% for estudiante in estudiantes %}
+            <label class="checkbox-label">
+              <input type="checkbox" name="estudiantes" value="{{ estudiante.id }}" 
+                     {{ 'checked' if estudiante.id in asignados_ids }}>
+              <span class="checkbox-text">
+                <strong>{{ estudiante.username }}</strong>
+                <small>{{ estudiante.email }}</small>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-data">No hay estudiantes activos disponibles</p>
+      {% endif %}
+    </fieldset>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">💾 Guardar Asignaciones</button>
+      <a href="{{ url_for('profesor.lista_examenes') }}" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

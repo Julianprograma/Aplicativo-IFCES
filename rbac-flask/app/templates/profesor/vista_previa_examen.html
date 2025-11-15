@@ -1,0 +1,382 @@
+{% extends 'layout.html' %}
+{% block title %}Vista Previa: {{ examen.titulo }}{% endblock %}
+{% block content %}
+<div class="vista-previa-header">
+  <div class="header-content">
+    <span class="preview-badge">👁️ VISTA PREVIA</span>
+    <h1>{{ examen.titulo }}</h1>
+    <p class="examen-descripcion">{{ examen.descripcion or 'Sin descripción' }}</p>
+  </div>
+  
+  <div class="examen-info-grid">
+    <div class="info-item">
+      <span class="info-label">⏱️ Duración:</span>
+      <span class="info-value">{{ examen.duracion_minutos }} minutos</span>
+    </div>
+    
+    <div class="info-item">
+      <span class="info-label">❓ Preguntas:</span>
+      <span class="info-value">{{ preguntas|length }}</span>
+    </div>
+    
+    <div class="info-item">
+      <span class="info-label">📊 Puntos Totales:</span>
+      <span class="info-value">{{ preguntas|sum(attribute='puntos') }}</span>
+    </div>
+    
+    <div class="info-item">
+      <span class="info-label">📝 Intentos:</span>
+      <span class="info-value">{{ examen.intentos_maximos }}</span>
+    </div>
+    
+    <div class="info-item">
+      <span class="info-label">✅ Calificación Mínima:</span>
+      <span class="info-value">{{ examen.calificacion_minima }}%</span>
+    </div>
+    
+    <div class="info-item">
+      <span class="info-label">🔀 Preguntas Aleatorias:</span>
+      <span class="info-value">{{ '✅ Sí' if examen.barajar_preguntas else '❌ No' }}</span>
+    </div>
+  </div>
+</div>
+
+<div class="action-bar">
+  <a href="{{ url_for('profesor.gestionar_preguntas', id=examen.id) }}" class="btn btn-secondary">
+    ← Volver a Gestionar
+  </a>
+  <a href="{{ url_for('profesor.editar_examen', id=examen.id) }}" class="btn btn-primary">
+    ✏️ Editar Configuración
+  </a>
+</div>
+
+<!-- Preguntas del Examen -->
+<div class="preguntas-container">
+  {% if examen.barajar_preguntas %}
+    <div class="alert alert-info">
+      ℹ️ <strong>Nota:</strong> Este examen tiene activado el barajado de preguntas. 
+      Cada estudiante verá las preguntas en orden diferente. Aquí se muestra el orden original.
+    </div>
+  {% endif %}
+  
+  {% if preguntas %}
+    {% for pregunta in preguntas %}
+      <div class="pregunta-preview-card">
+        <div class="pregunta-preview-header">
+          <div class="pregunta-numero">Pregunta {{ loop.index }}</div>
+          <div class="pregunta-metadata">
+            <span class="badge badge-info">{{ pregunta.tipo|replace('_', ' ')|title }}</span>
+            
+            {% if pregunta.nivel_dificultad == 'basico' %}
+              <span class="badge badge-success">🟢 Básico</span>
+            {% elif pregunta.nivel_dificultad == 'intermedio' %}
+              <span class="badge badge-warning">🟡 Intermedio</span>
+            {% elif pregunta.nivel_dificultad == 'avanzado' %}
+              <span class="badge badge-danger">🔴 Avanzado</span>
+            {% endif %}
+            
+            <span class="pregunta-puntos">{{ pregunta.puntos }} pts</span>
+            
+            {% if pregunta.tiempo_estimado %}
+              <span class="pregunta-tiempo">⏱️ {{ pregunta.tiempo_estimado }}s</span>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="pregunta-texto">
+          {{ pregunta.texto }}
+          {% if pregunta.imagen_url %}
+            <div class="pregunta-imagen">
+              <img src="{{ pregunta.imagen_url }}" alt="Imagen de la pregunta" />
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="pregunta-opciones">
+          {% if pregunta.tipo == 'opcion_multiple' %}
+            {% set opciones = pregunta.opciones|from_json %}
+            {% for opcion in opciones %}
+              <div class="opcion-preview {% if opcion == pregunta.respuesta_correcta %}opcion-correcta{% endif %}">
+                <span class="opcion-letra">{{ loop.index0|chr_uppercase }}</span>
+                <span class="opcion-texto">{{ opcion }}</span>
+                {% if opcion == pregunta.respuesta_correcta %}
+                  <span class="correcta-badge">✅ Correcta</span>
+                {% endif %}
+              </div>
+            {% endfor %}
+            
+          {% elif pregunta.tipo == 'verdadero_falso' %}
+            <div class="opcion-preview {% if pregunta.respuesta_correcta == 'Verdadero' %}opcion-correcta{% endif %}">
+              <span class="opcion-letra">V</span>
+              <span class="opcion-texto">Verdadero</span>
+              {% if pregunta.respuesta_correcta == 'Verdadero' %}
+                <span class="correcta-badge">✅ Correcta</span>
+              {% endif %}
+            </div>
+            <div class="opcion-preview {% if pregunta.respuesta_correcta == 'Falso' %}opcion-correcta{% endif %}">
+              <span class="opcion-letra">F</span>
+              <span class="opcion-texto">Falso</span>
+              {% if pregunta.respuesta_correcta == 'Falso' %}
+                <span class="correcta-badge">✅ Correcta</span>
+              {% endif %}
+            </div>
+            
+          {% elif pregunta.tipo == 'abierta' %}
+            <div class="respuesta-abierta-preview">
+              <textarea placeholder="El estudiante escribirá su respuesta aquí..." disabled></textarea>
+              <small class="text-muted">
+                💡 Respuesta esperada: <strong>{{ pregunta.respuesta_correcta }}</strong>
+              </small>
+            </div>
+          {% endif %}
+        </div>
+        
+        {% if pregunta.explicacion %}
+          <div class="pregunta-explicacion">
+            <strong>📚 Explicación:</strong>
+            <p>{{ pregunta.explicacion }}</p>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <p>📝 Este examen aún no tiene preguntas</p>
+      <a href="{{ url_for('profesor.crear_pregunta', examen_id=examen.id) }}" class="btn btn-primary">
+        Agregar Primera Pregunta
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<div class="action-bar">
+  <a href="{{ url_for('profesor.gestionar_preguntas', id=examen.id) }}" class="btn btn-secondary">
+    ← Volver a Gestionar
+  </a>
+  {% if preguntas|length > 0 %}
+    <a href="{{ url_for('profesor.asignar_examen', id=examen.id) }}" class="btn btn-success">
+      👥 Asignar a Estudiantes
+    </a>
+  {% endif %}
+</div>
+
+<style>
+  .vista-previa-header {
+    background: linear-gradient(135deg, #00695c 0%, #00897b 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .preview-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    margin-bottom: 10px;
+  }
+  
+  .examen-descripcion {
+    opacity: 0.9;
+    margin: 10px 0;
+  }
+  
+  .examen-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .info-item {
+    background: rgba(255,255,255,0.1);
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  .info-label {
+    display: block;
+    font-size: 0.85em;
+    opacity: 0.9;
+    margin-bottom: 5px;
+  }
+  
+  .info-value {
+    display: block;
+    font-size: 1.2em;
+    font-weight: 600;
+  }
+  
+  .preguntas-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .pregunta-preview-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #00695c;
+  }
+  
+  .pregunta-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+  
+  .pregunta-numero {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #00695c;
+  }
+  
+  .pregunta-metadata {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .pregunta-texto {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .pregunta-imagen {
+    margin: 15px 0;
+  }
+  
+  .pregunta-imagen img {
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  
+  .pregunta-opciones {
+    margin: 20px 0;
+  }
+  
+  .opcion-preview {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  
+  .opcion-preview.opcion-correcta {
+    background: #e8f5e9;
+    border-color: #4caf50;
+  }
+  
+  .opcion-letra {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    background: white;
+    border: 2px solid #00695c;
+    border-radius: 50%;
+    font-weight: 700;
+    color: #00695c;
+    flex-shrink: 0;
+  }
+  
+  .opcion-correcta .opcion-letra {
+    background: #4caf50;
+    border-color: #4caf50;
+    color: white;
+  }
+  
+  .opcion-texto {
+    flex: 1;
+    font-size: 1.05em;
+  }
+  
+  .correcta-badge {
+    background: #4caf50;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+  }
+  
+  .respuesta-abierta-preview textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 15px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1em;
+    resize: vertical;
+    background: #fafafa;
+  }
+  
+  .pregunta-explicacion {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff8e1;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+  }
+  
+  .pregunta-explicacion strong {
+    color: #f57c00;
+    display: block;
+    margin-bottom: 8px;
+  }
+  
+  .alert-info {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f9f9f9;
+    border-radius: 12px;
+    color: #666;
+  }
+  
+  .empty-state p {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+  }
+</style>
+
+<!-- Filtro personalizado para convertir número a letra -->
+{% set alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+<template id="chr-filter">
+  {{ alphabet }}
+</template>
+
+<script>
+document.querySelectorAll('.opcion-letra').forEach((el, idx) => {
+  if (!el.textContent || el.textContent === '{{ loop.index0|chr_uppercase }}') {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    // El índice ya debería estar correcto desde Jinja2
+  }
+});
+</script>
+{% endblock %}

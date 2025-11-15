@@ -1,0 +1,390 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ examen.titulo }} - IFCES{% endblock %}
+
+{% block content %}
+<!-- Barra de información superior -->
+<div class="exam-header">
+    <div class="container">
+        <div class="row align-items-center py-3">
+            <div class="col-md-8">
+                <h4 class="mb-1"><i class="bi bi-file-text"></i> {{ examen.titulo }}</h4>
+                <p class="mb-0 text-muted">
+                    <span class="badge bg-primary">{{ examen.preguntas|length }} preguntas</span>
+                    {% if examen.categoria %}
+                    <span class="badge bg-secondary">{{ examen.categoria.nombre }}</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="timer-box mb-2">
+                    <i class="bi bi-clock"></i> Tiempo: <strong id="timer">{{ examen.duracion_minutos }}:00</strong>
+                </div>
+                <div class="progress-text">
+                    <small><span id="progreso-texto">0/{{ examen.preguntas|length }}</span> respondidas</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenido del examen -->
+<div class="exam-content">
+    <div class="container py-4">
+        <form id="examen-form">
+            {% for pregunta in examen.preguntas %}
+            <!-- Pregunta {{ loop.index }} -->
+            <div class="question-box mb-4" id="pregunta-{{ loop.index }}" data-pregunta-id="{{ pregunta.id }}" data-index="{{ loop.index }}">
+                <div class="question-header-box">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="question-number">Pregunta {{ loop.index }}</h5>
+                            <div class="question-info">
+                                {% if pregunta.puntos %}
+                                <span class="badge bg-info me-2">Puntúa como {{ pregunta.puntos }}</span>
+                                {% endif %}
+                                <span class="text-muted">Se puntúa 1,00 sobre 1,00</span>
+                            </div>
+                        </div>
+                        <div class="question-flag">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Marcar pregunta">
+                                <i class="bi bi-flag"></i> Marcar pregunta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="question-text-box">
+                    <div class="question-text">{{ pregunta.texto }}</div>
+                    
+                    {% if pregunta.imagen_url %}
+                    <div class="question-image mt-3">
+                        <img src="{{ pregunta.imagen_url }}" alt="Imagen de pregunta" class="img-fluid">
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="answer-section">
+                    <p class="answer-instruction"><strong>Seleccione una:</strong></p>
+                    
+                    {% if pregunta.tipo == 'opcion_multiple' %}
+                        {% set opciones = pregunta.opciones|from_json %}
+                        {% for opcion in opciones %}
+                        <div class="answer-option">
+                            <input type="radio" 
+                                   class="form-check-input" 
+                                   id="q{{ pregunta.id }}_opt{{ loop.index0 }}"
+                                   name="pregunta_{{ pregunta.id }}" 
+                                   value="{{ opcion.texto }}">
+                            <label class="form-check-label ms-2" for="q{{ pregunta.id }}_opt{{ loop.index0 }}">
+                                <strong>{{ "abcd"[loop.index0] }}.</strong> {{ opcion.texto }}
+                            </label>
+                        </div>
+                        {% endfor %}
+
+                    {% elif pregunta.tipo == 'verdadero_falso' %}
+                        <div class="answer-option">
+                            <input type="radio" 
+                                   class="form-check-input" 
+                                   id="q{{ pregunta.id }}_true"
+                                   name="pregunta_{{ pregunta.id }}" 
+                                   value="Verdadero">
+                            <label class="form-check-label ms-2" for="q{{ pregunta.id }}_true">
+                                <strong>a.</strong> Verdadero
+                            </label>
+                        </div>
+                        <div class="answer-option">
+                            <input type="radio" 
+                                   class="form-check-input" 
+                                   id="q{{ pregunta.id }}_false"
+                                   name="pregunta_{{ pregunta.id }}" 
+                                   value="Falso">
+                            <label class="form-check-label ms-2" for="q{{ pregunta.id }}_false">
+                                <strong>b.</strong> Falso
+                            </label>
+                        </div>
+
+                    {% elif pregunta.tipo == 'abierta' %}
+                        <div class="answer-open">
+                            <label class="form-label">Respuesta:</label>
+                            <textarea class="form-control" 
+                                      name="pregunta_{{ pregunta.id }}" 
+                                      rows="6" 
+                                      placeholder="Escribe tu respuesta aquí..."></textarea>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Botón de finalizar -->
+            <div class="submit-box text-center py-4">
+                <button type="button" class="btn btn-success btn-lg" id="btn-finalizar-examen">
+                    <i class="bi bi-check-circle"></i> Enviar todo y terminar
+                </button>
+                <p class="mt-2 text-muted">
+                    <small>Al hacer clic en "Enviar todo y terminar", se enviarán todas las respuestas y finalizará el intento.</small>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Cargando -->
+<div id="modalCargando" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 40px; border-radius: 8px; text-align: center; max-width: 400px;">
+        <div class="spinner" style="margin: 0 auto 20px;">
+            <div style="border: 4px solid #f3f3f3; border-top: 4px solid #0f6cbf; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        </div>
+        <h3 style="margin: 20px 0 10px; color: #333;">Enviando respuestas...</h3>
+        <p style="color: #666; margin: 0;">Por favor espera un momento</p>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<style>
+/* Estilos estilo Moodle */
+.exam-header {
+    background: white;
+    border-bottom: 3px solid #0f6cbf;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timer-box {
+    padding: 8px 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.timer-box.warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+}
+
+.exam-content {
+    background: #f4f4f4;
+    min-height: calc(100vh - 200px);
+}
+
+.question-box {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.question-header-box {
+    padding: 15px 20px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+}
+
+.question-number {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.question-info {
+    font-size: 0.9rem;
+}
+
+.question-text-box {
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.question-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #333;
+}
+
+.answer-section {
+    padding: 20px;
+}
+
+.answer-instruction {
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.answer-option {
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #fafafa;
+    transition: all 0.2s;
+}
+
+.answer-option:hover {
+    background: #f0f0f0;
+    border-color: #0f6cbf;
+}
+
+.answer-option input[type="radio"] {
+    margin-top: 3px;
+}
+
+.answer-option label {
+    cursor: pointer;
+    margin-bottom: 0;
+    width: 100%;
+}
+
+.answer-open textarea {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.submit-box {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 30px;
+}
+
+.question-flag .btn {
+    font-size: 0.85rem;
+}
+</style>
+
+<script>
+const examenId = {{ examen.id }};
+const duracionMinutos = {{ examen.duracion_minutos }};
+let tiempoRestante = duracionMinutos * 60;
+let timerInterval;
+
+// Inicializar cuando cargue la página
+document.addEventListener('DOMContentLoaded', function() {
+    iniciarTimer();
+    actualizarProgreso();
+    
+    // Detectar cambios en respuestas
+    document.querySelectorAll('input[type="radio"], textarea').forEach(input => {
+        input.addEventListener('change', actualizarProgreso);
+    });
+    
+    // Botón de enviar
+    document.getElementById('btn-finalizar-examen').addEventListener('click', enviarExamen);
+});
+
+function iniciarTimer() {
+    actualizarTimer();
+    timerInterval = setInterval(() => {
+        tiempoRestante--;
+        actualizarTimer();
+        
+        if (tiempoRestante <= 300 && tiempoRestante > 0) {
+            document.querySelector('.timer-box').classList.add('warning');
+        }
+        
+        if (tiempoRestante <= 0) {
+            clearInterval(timerInterval);
+            enviarExamen();
+        }
+    }, 1000);
+}
+
+function actualizarTimer() {
+    const minutos = Math.floor(tiempoRestante / 60);
+    const segundos = tiempoRestante % 60;
+    document.getElementById('timer').textContent = 
+        `${minutos}:${segundos.toString().padStart(2, '0')}`;
+}
+
+function actualizarProgreso() {
+    const todasPreguntas = document.querySelectorAll('.question-box');
+    let respondidas = 0;
+    
+    todasPreguntas.forEach(pregunta => {
+        const radios = pregunta.querySelectorAll('input[type="radio"]');
+        const textarea = pregunta.querySelector('textarea');
+        
+        if (radios.length > 0) {
+            const seleccionada = Array.from(radios).some(r => r.checked);
+            if (seleccionada) respondidas++;
+        } else if (textarea && textarea.value.trim()) {
+            respondidas++;
+        }
+    });
+    
+    document.getElementById('progreso-texto').textContent = 
+        `${respondidas}/${todasPreguntas.length}`;
+}
+
+async function enviarExamen() {
+    console.log('🚀 Iniciando envío del examen...');
+    
+    // Recopilar respuestas en el formato que espera el backend
+    const respuestas = {};
+    const preguntasBoxes = document.querySelectorAll('.question-box');
+    
+    console.log('📋 Preguntas encontradas:', preguntasBoxes.length);
+    
+    preguntasBoxes.forEach(box => {
+        const preguntaId = parseInt(box.dataset.preguntaId);
+        const radioSeleccionado = box.querySelector('input[type="radio"]:checked');
+        const textarea = box.querySelector('textarea');
+        
+        let respuesta = '';
+        if (radioSeleccionado) {
+            respuesta = radioSeleccionado.value;
+        } else if (textarea) {
+            respuesta = textarea.value.trim();
+        }
+        
+        // Formato: pregunta_{id}: "respuesta"
+        respuestas[`pregunta_${preguntaId}`] = respuesta;
+        console.log(`✅ Pregunta ${preguntaId}:`, respuesta);
+    });
+    
+    // Calcular tiempo utilizado
+    const tiempoUtilizado = (duracionMinutos * 60) - tiempoRestante;
+    respuestas.tiempo_utilizado = tiempoUtilizado;
+    
+    console.log('📦 Datos a enviar:', respuestas);
+    
+    // Mostrar modal de carga
+    const modalCargando = document.getElementById('modalCargando');
+    modalCargando.style.display = 'flex';
+    
+    try {
+        console.log('📡 Enviando al servidor...');
+        const response = await fetch(`/estudiante/examen/${examenId}/enviar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(respuestas)
+        });
+        
+        console.log('📥 Respuesta recibida, status:', response.status);
+        const data = await response.json();
+        console.log('📄 Datos recibidos:', data);
+        
+        if (data.success) {
+            clearInterval(timerInterval);
+            window.location.href = `/estudiante/examen/${examenId}/resultado/${data.resultado_id}`;
+        } else {
+            modalCargando.style.display = 'none';
+            alert('❌ ' + (data.error || 'Error al enviar el examen'));
+        }
+    } catch (error) {
+        modalCargando.style.display = 'none';
+        alert('❌ Error de conexión. Por favor intenta nuevamente.');
+        console.error('Error:', error);
+    }
+}
+</script>
+{% endblock %}

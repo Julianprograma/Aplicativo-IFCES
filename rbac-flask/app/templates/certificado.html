@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado - IFCES</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .certificado-container {
+            background: white;
+            max-width: 800px;
+            width: 100%;
+            padding: 60px 80px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 20px solid #00695c;
+            position: relative;
+        }
+        
+        .certificado-ornamento {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            border: 2px solid #ffd700;
+            pointer-events: none;
+        }
+        
+        .certificado-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .certificado-logo {
+            font-size: 4em;
+            margin-bottom: 10px;
+        }
+        
+        .certificado-titulo {
+            font-size: 3em;
+            color: #00695c;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .certificado-subtitulo {
+            font-size: 1.2em;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .certificado-cuerpo {
+            text-align: center;
+            margin: 40px 0;
+            line-height: 2;
+        }
+        
+        .certificado-estudiante {
+            font-size: 2.5em;
+            color: #00695c;
+            font-weight: bold;
+            border-bottom: 2px solid #00695c;
+            display: inline-block;
+            padding: 0 20px;
+            margin: 20px 0;
+        }
+        
+        .certificado-examen {
+            font-size: 1.8em;
+            color: #764ba2;
+            margin: 20px 0;
+        }
+        
+        .certificado-calificacion {
+            font-size: 2em;
+            color: #ffd700;
+            font-weight: bold;
+            margin: 30px 0;
+        }
+        
+        .certificado-footer {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .certificado-firma {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .certificado-linea {
+            border-top: 2px solid #333;
+            width: 200px;
+            margin: 0 auto 10px;
+        }
+        
+        .certificado-codigo {
+            text-align: center;
+            margin-top: 40px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .btn-imprimir {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #00695c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .btn-imprimir:hover {
+            background: #004d40;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .btn-imprimir {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir Certificado</button>
+    
+    <div class="certificado-container">
+        <div class="certificado-ornamento"></div>
+        
+        <div class="certificado-header">
+            <div class="certificado-logo">🎓</div>
+            <h1 class="certificado-titulo">Certificado</h1>
+            <p class="certificado-subtitulo">de Excelencia Académica</p>
+        </div>
+        
+        <div class="certificado-cuerpo">
+            <p>Se certifica que</p>
+            
+            <div class="certificado-estudiante">
+                {{ certificado.estudiante.username }}
+            </div>
+            
+            <p>ha completado exitosamente el examen</p>
+            
+            <div class="certificado-examen">
+                "{{ certificado.examen.titulo }}"
+            </div>
+            
+            <p>obteniendo una calificación de</p>
+            
+            <div class="certificado-calificacion">
+                ⭐ {{ "%.1f"|format(certificado.calificacion) }}% ⭐
+            </div>
+            
+            <p>Demostrando conocimiento y dedicación en su formación académica</p>
+        </div>
+        
+        <div class="certificado-footer">
+            <div class="certificado-firma">
+                <div class="certificado-linea"></div>
+                <p><strong>Director Académico</strong></p>
+                <p>IFCES</p>
+            </div>
+            
+            <div class="certificado-firma">
+                <div class="certificado-linea"></div>
+                <p><strong>{{ certificado.examen.profesor.username }}</strong></p>
+                <p>Profesor</p>
+            </div>
+        </div>
+        
+        <div class="certificado-codigo">
+            <p><strong>Código de Verificación:</strong> {{ certificado.codigo_verificacion }}</p>
+            <p><strong>Fecha de Emisión:</strong> {{ certificado.fecha_emision.strftime('%d de %B de %Y') }}</p>
+            <p style="margin-top: 20px; font-size: 0.8em;">
+                Este certificado puede ser verificado en: 
+                {{ request.url_root }}certificado/{{ certificado.codigo_verificacion }}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

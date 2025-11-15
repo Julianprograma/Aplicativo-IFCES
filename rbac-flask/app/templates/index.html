@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+{% block title %}Inicio - IFCES{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Bienvenido a la Plataforma IFCES</h1>
+  <p>Inspirada en Moodle y la Universidad de Cundinamarca.</p>
+  <div class="cta">
+    {% if not current_user.is_authenticated %}
+      <a class="btn" href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+      <a class="btn secondary" href="{{ url_for('auth.register') }}">Crear cuenta</a>
+    {% else %}
+      {% if current_user.role == 'admin' %}
+        <a class="btn" href="{{ url_for('main.dashboard_admin') }}">Ir a tu panel</a>
+      {% elif current_user.role == 'profesor' %}
+        <a class="btn" href="{{ url_for('main.dashboard_profesor') }}">Ir a tu panel</a>
+      {% else %}
+        <a class="btn" href="{{ url_for('main.dashboard_estudiante') }}">Ir a tu panel</a>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
