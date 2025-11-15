@@ -34,6 +34,22 @@
                         <input type="number" class="form-control" id="tiempo_estimado" name="tiempo_estimado" value="{{ pregunta.tiempo_estimado }}" min="15" step="15" required>
                     </div>
 
+  <div class="form-group">
+    <label for="nivel_dificultad">Nivel de Dificultad 📊</label>
+    <select name="nivel_dificultad" id="nivel_dificultad" class="form-control">
+      <option value="basico" {{ 'selected' if pregunta.nivel_dificultad == 'basico' }}>🟢 Básico</option>
+      <option value="intermedio" {{ 'selected' if pregunta.nivel_dificultad == 'intermedio' }}>🟡 Intermedio</option>
+      <option value="avanzado" {{ 'selected' if pregunta.nivel_dificultad == 'avanzado' }}>🔴 Avanzado</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="explicacion">Explicación de la respuesta correcta 💡</label>
+    <textarea name="explicacion" id="explicacion" rows="3" class="form-control" 
+              placeholder="Explica por qué esta es la respuesta correcta (se mostrará después de responder)">{{ pregunta.explicacion }}</textarea>
+    <small>Esta explicación ayudará a los estudiantes a aprender de sus errores</small>
+  </div>
+
   <!-- Opciones para Opción Múltiple -->
   <div id="opcion_multiple_section" class="hidden-section">
     <div class="form-group">
@@ -43,7 +59,7 @@
           {% set opciones = pregunta.opciones|from_json %}
           {% for opcion in opciones %}
             <div class="opcion-item">
-              <input type="text" name="opcion_{{ loop.index }}" value="{{ opcion }}" placeholder="Opción {{ loop.index }}" class="form-control">
+              <input type="text" name="opcion_{{ loop.index }}" value="{{ opcion.texto }}" placeholder="Opción {{ loop.index }}" class="form-control">
             </div>
           {% endfor %}
         {% else %}
@@ -64,8 +80,9 @@
         <option value="">Selecciona la opción correcta</option>
         {% if pregunta.tipo == 'opcion_multiple' %}
           {% set opciones = pregunta.opciones|from_json %}
+          {% set respuesta_correcta_texto = (opciones|selectattr('correcta', 'equalto', true)|first).texto %}
           {% for opcion in opciones %}
-            <option value="{{ opcion }}" {{ 'selected' if opcion == pregunta.respuesta_correcta }}>{{ opcion }}</option>
+            <option value="{{ opcion.texto }}" {{ 'selected' if opcion.texto == respuesta_correcta_texto }}>{{ opcion.texto }}</option>
           {% endfor %}
         {% endif %}
       </select>
@@ -78,11 +95,11 @@
       <label>Respuesta correcta *</label>
       <div class="radio-group">
         <label class="radio-label">
-          <input type="radio" name="respuesta_correcta" value="Verdadero" {{ 'checked' if pregunta.respuesta_correcta == 'Verdadero' }}>
+          <input type="radio" name="respuesta_correcta_vf" value="Verdadero" {{ 'checked' if pregunta.respuesta_correcta == 'Verdadero' }}>
           <span>Verdadero</span>
         </label>
         <label class="radio-label">
-          <input type="radio" name="respuesta_correcta" value="Falso" {{ 'checked' if pregunta.respuesta_correcta == 'Falso' }}>
+          <input type="radio" name="respuesta_correcta_vf" value="Falso" {{ 'checked' if pregunta.respuesta_correcta == 'Falso' }}>
           <span>Falso</span>
         </label>
       </div>
@@ -93,7 +110,7 @@
   <div id="abierta_section" class="hidden-section">
     <div class="form-group">
       <label for="respuesta_sugerida">Respuesta sugerida (opcional)</label>
-      <textarea name="respuesta_correcta" id="respuesta_sugerida" rows="3" class="form-control" 
+      <textarea name="respuesta_abierta" id="respuesta_sugerida" rows="3" class="form-control" 
                 placeholder="Escribe una respuesta modelo o criterios de evaluación">{{ pregunta.respuesta_correcta if pregunta.tipo == 'abierta' }}</textarea>
     </div>
   </div>

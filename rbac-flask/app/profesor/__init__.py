@@ -332,27 +332,42 @@ def crear_pregunta(id):
         respuesta_correcta = None
         
         if tipo == "opcion_multiple":
-            opciones = []
+            opciones_texto = []
             i = 1
             while f"opcion_{i}" in request.form:
                 opcion = request.form.get(f"opcion_{i}").strip()
                 if opcion:
-                    opciones.append(opcion)
+                    opciones_texto.append(opcion)
                 i += 1
             
-            if len(opciones) < 2:
+            if len(opciones_texto) < 2:
                 flash("Debes agregar al menos 2 opciones", "warning")
                 return render_template("profesor/crear_pregunta.html", examen=examen)
             
+            respuesta_correcta_texto = request.form.get("respuesta_correcta")
+            if not respuesta_correcta_texto:
+                flash("Debes seleccionar una respuesta correcta", "warning")
+                return render_template("profesor/crear_pregunta.html", examen=examen)
+
+            opciones = []
+            for opt in opciones_texto:
+                opciones.append({
+                    "texto": opt,
+                    "correcta": opt == respuesta_correcta_texto
+                })
+
             opciones_json = json.dumps(opciones)
-            respuesta_correcta = request.form.get("respuesta_correcta")
+            respuesta_correcta = None  # La respuesta correcta ahora está en el JSON de opciones
             
         elif tipo == "verdadero_falso":
-            opciones_json = json.dumps(["Verdadero", "Falso"])
+            opciones_json = json.dumps([
+                {"texto": "Verdadero", "correcta": request.form.get("respuesta_correcta") == "Verdadero"},
+                {"texto": "Falso", "correcta": request.form.get("respuesta_correcta") == "Falso"}
+            ])
             respuesta_correcta = request.form.get("respuesta_correcta")
         
         elif tipo == "abierta":
-            respuesta_correcta = request.form.get("respuesta_sugerida", "")
+            respuesta_correcta = request.form.get("respuesta_correcta", "")
         
         # Obtener campos ICFES
         nivel_dificultad = request.form.get("nivel_dificultad", "basico")
@@ -401,25 +416,42 @@ def editar_pregunta(id):
         pregunta.puntos = int(request.form.get("puntos", 5))
         
         if tipo == "opcion_multiple":
-            opciones = []
+            opciones_texto = []
             i = 1
             while f"opcion_{i}" in request.form:
                 opcion = request.form.get(f"opcion_{i}").strip()
                 if opcion:
-                    opciones.append(opcion)
+                    opciones_texto.append(opcion)
                 i += 1
             
-            if len(opciones) < 2:
+            if len(opciones_texto) < 2:
                 flash("Debes agregar al menos 2 opciones", "warning")
                 return render_template("profesor/editar_pregunta.html", 
                                      pregunta=pregunta, examen=examen)
             
+            respuesta_correcta_texto = request.form.get("respuesta_correcta")
+            if not respuesta_correcta_texto:
+                flash("Debes seleccionar una respuesta correcta", "warning")
+                return render_template("profesor/editar_pregunta.html", 
+                                     pregunta=pregunta, examen=examen)
+
+            opciones = []
+            for opt in opciones_texto:
+                opciones.append({
+                    "texto": opt,
+                    "correcta": opt == respuesta_correcta_texto
+                })
+
             pregunta.opciones = json.dumps(opciones)
-            pregunta.respuesta_correcta = request.form.get("respuesta_correcta")
+            pregunta.respuesta_correcta = None  # La respuesta correcta ahora está en el JSON de opciones
             
         elif tipo == "verdadero_falso":
-            pregunta.opciones = json.dumps(["Verdadero", "Falso"])
-            pregunta.respuesta_correcta = request.form.get("respuesta_correcta")
+            respuesta_correcta_vf = request.form.get("respuesta_correcta")
+            pregunta.opciones = json.dumps([
+                {"texto": "Verdadero", "correcta": respuesta_correcta_vf == "Verdadero"},
+                {"texto": "Falso", "correcta": respuesta_correcta_vf == "Falso"}
+            ])
+            pregunta.respuesta_correcta = respuesta_correcta_vf
         
         else:  # abierta
             pregunta.opciones = None
