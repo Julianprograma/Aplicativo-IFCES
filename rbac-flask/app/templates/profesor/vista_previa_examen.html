@@ -95,11 +95,12 @@
         <div class="pregunta-opciones">
           {% if pregunta.tipo == 'opcion_multiple' %}
             {% set opciones = pregunta.opciones|from_json %}
+            {% set letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
             {% for opcion in opciones %}
-              <div class="opcion-preview {% if opcion == pregunta.respuesta_correcta %}opcion-correcta{% endif %}">
-                <span class="opcion-letra">{{ loop.index0|chr_uppercase }}</span>
-                <span class="opcion-texto">{{ opcion }}</span>
-                {% if opcion == pregunta.respuesta_correcta %}
+              <div class="opcion-preview {% if opcion.correcta %}opcion-correcta{% endif %}">
+                <span class="opcion-letra">{{ letras[loop.index0] }}</span>
+                <span class="opcion-texto">{{ opcion.texto }}</span>
+                {% if opcion.correcta %}
                   <span class="correcta-badge">✅ Correcta</span>
                 {% endif %}
               </div>
@@ -364,19 +365,4 @@
     margin-bottom: 20px;
   }
 </style>
-
-<!-- Filtro personalizado para convertir número a letra -->
-{% set alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
-<template id="chr-filter">
-  {{ alphabet }}
-</template>
-
-<script>
-document.querySelectorAll('.opcion-letra').forEach((el, idx) => {
-  if (!el.textContent || el.textContent === '{{ loop.index0|chr_uppercase }}') {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    // El índice ya debería estar correcto desde Jinja2
-  }
-});
-</script>
 {% endblock %}

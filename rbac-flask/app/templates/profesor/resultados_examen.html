@@ -1,101 +1,54 @@
-{% extends 'layout.html' %}
-{% block title %}Resultados - {{ examen.titulo }}{% endblock %}
+{% extends "layout.html" %}
+
+{% block title %}Resultados del Examen: {{ examen.titulo }}{% endblock %}
+
 {% block content %}
-<div class="dashboard-header">
-  <h2>📊 Resultados del Examen</h2>
-  <p class="welcome">{{ examen.titulo }}</p>
-</div>
+<div class="container mt-4">
+    <h1 class="mb-4">Resultados del Examen: <strong>{{ examen.titulo }}</strong></h1>
+    <p class="lead">{{ examen.descripcion }}</p>
+    <hr>
 
-<div class="action-bar">
-  <a href="{{ url_for('profesor.lista_examenes') }}" class="btn btn-secondary">← Volver a Exámenes</a>
-</div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-<div class="stats-container">
-  <div class="stat-card">
-    <div class="stat-value">{{ resultados|length }}</div>
-    <div class="stat-label">Estudiantes Presentaron</div>
-  </div>
-  
-  <div class="stat-card">
-    <div class="stat-value">{{ "%.2f"|format(promedio) }}</div>
-    <div class="stat-label">Promedio General</div>
-  </div>
-  
-  <div class="stat-card">
-    <div class="stat-value">{{ aprobados }}</div>
-    <div class="stat-label">Aprobados (≥60%)</div>
-  </div>
-  
-  <div class="stat-card">
-    <div class="stat-value">{{ resultados|length - aprobados }}</div>
-    <div class="stat-label">Reprobados</div>
-  </div>
-</div>
+    <form method="post">
+        <div class="accordion" id="accordionResultados">
+            {% for resultado in resultados %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-{{ resultado.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ resultado.id }}" aria-expanded="false" aria-controls="collapse-{{ resultado.id }}">
+                            <strong>{{ resultado.estudiante.username }}</strong> - Calificación: {{ "%.2f"|format(resultado.calificacion) }}
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ resultado.id }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ resultado.id }}" data-bs-parent="#accordionResultados">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <label for="comentario-{{ resultado.id }}" class="form-label">Comentario del Profesor</label>
+                                <textarea class="form-control" id="comentario-{{ resultado.id }}" name="comentario-{{ resultado.id }}" rows="3">{{ resultado.comentario_profesor or '' }}</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="recomendaciones-{{ resultado.id }}" class="form-label">Recomendaciones</label>
+                                <textarea class="form-control" id="recomendaciones-{{ resultado.id }}" name="recomendaciones-{{ resultado.id }}" rows="3">{{ resultado.recomendaciones or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Aún no hay resultados para este examen.
+                </div>
+            {% endfor %}
+        </div>
 
-{% if resultados %}
-  <div class="table-container">
-    <table class="results-table">
-      <thead>
-        <tr>
-          <th>Estudiante</th>
-          <th>Calificación</th>
-          <th>Total Puntos</th>
-          <th>Porcentaje</th>
-          <th>Estado</th>
-          <th>Fecha Inicio</th>
-          <th>Fecha Fin</th>
-          <th>Tiempo</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for resultado in resultados %}
-          <tr>
-            <td>{{ resultado.estudiante.username }}</td>
-            <td class="calificacion">{{ resultado.calificacion }}</td>
-            <td>{{ resultado.total_puntos }}</td>
-            <td>
-              {% set porcentaje = (resultado.calificacion / resultado.total_puntos * 100) if resultado.total_puntos > 0 else 0 %}
-              {{ "%.1f"|format(porcentaje) }}%
-            </td>
-            <td>
-              {% if resultado.completado %}
-                {% set porcentaje = (resultado.calificacion / resultado.total_puntos * 100) if resultado.total_puntos > 0 else 0 %}
-                {% if porcentaje >= 60 %}
-                  <span class="badge badge-success">Aprobado</span>
-                {% else %}
-                  <span class="badge badge-danger">Reprobado</span>
-                {% endif %}
-              {% else %}
-                <span class="badge badge-warning">En progreso</span>
-              {% endif %}
-            </td>
-            <td>{{ resultado.fecha_inicio.strftime('%d/%m/%Y %H:%M') if resultado.fecha_inicio }}</td>
-            <td>{{ resultado.fecha_fin.strftime('%d/%m/%Y %H:%M') if resultado.fecha_fin else '-' }}</td>
-            <td>
-              {% if resultado.fecha_inicio and resultado.fecha_fin %}
-                {% set duracion = resultado.fecha_fin - resultado.fecha_inicio %}
-                {{ duracion.seconds // 60 }} min
-              {% else %}
-                -
-              {% endif %}
-            </td>
-            <td>
-              <a href="{{ url_for('profesor.detalle_resultado', id=resultado.id) }}" 
-                 class="btn btn-sm" 
-                 style="background:#4caf50;color:#fff;" 
-                 title="Ver detalle y comentar">
-                💬 Comentar
-              </a>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% else %}
-  <div class="empty-state">
-    <p>📭 Ningún estudiante ha presentado este examen aún</p>
-  </div>
-{% endif %}
+        {% if resultados %}
+            <button type="submit" class="btn btn-primary mt-4">Guardar Comentarios</button>
+        {% endif %}
+    </form>
+    <a href="{{ url_for('main.dashboard_profesor') }}" class="btn btn-secondary mt-4">Volver al Dashboard</a>
+</div>
 {% endblock %}

@@ -2,51 +2,79 @@
 {% block title %}Reporte de Exámenes{% endblock %}
 {% block content %}
 <div class="dashboard-header">
-  <h2>📊 Reporte y Análisis de Exámenes</h2>
+  <h2>
+    <span class="material-symbols-rounded">bar_chart</span>
+    Reporte y Análisis de Exámenes
+  </h2>
   <p class="welcome">Panel de análisis detallado del desempeño y progreso</p>
 </div>
 
 <div class="action-bar">
-  <a href="{{ url_for('main.dashboard_profesor') }}" class="btn btn-secondary">← Volver al Dashboard</a>
-  <button onclick="window.print()" class="btn" style="background:#4caf50;color:#fff;">🖨️ Imprimir Reporte</button>
+  <a href="{{ url_for('main.dashboard_profesor') }}" class="btn secondary">
+    <span class="material-symbols-rounded">arrow_back</span>
+    Volver al Dashboard
+  </a>
+  <button onclick="window.print()" class="btn btn-secondary">
+    <span class="material-symbols-rounded">print</span>
+    Imprimir Reporte
+  </button>
 </div>
 
 <!-- Estadísticas Generales -->
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-icon">📝</div>
-    <div class="stat-value">{{ total_examenes }}</div>
-    <div class="stat-label">Exámenes Creados</div>
-  </div>
-  
-  <div class="stat-card">
-    <div class="stat-icon">✅</div>
-    <div class="stat-value">{{ total_presentaciones }}</div>
-    <div class="stat-label">Presentaciones Completadas</div>
-  </div>
-  
-  <div class="stat-card">
-    <div class="stat-icon">👥</div>
-    <div class="stat-value">{{ progreso_estudiantes|length }}</div>
-    <div class="stat-label">Estudiantes Activos</div>
-  </div>
-  
-  <div class="stat-card">
-    <div class="stat-icon">📈</div>
-    <div class="stat-value">
-      {% if progreso_estudiantes %}
-        {{ "%.1f"|format((progreso_estudiantes|map(attribute='promedio')|sum) / (progreso_estudiantes|length)) }}%
-      {% else %}
-        0%
-      {% endif %}
+    <div class="stat-icon">
+      <span class="material-symbols-rounded" style="font-size:2.5rem;">quiz</span>
     </div>
-    <div class="stat-label">Promedio Global</div>
+    <div class="stat-content">
+      <div class="stat-value">{{ total_examenes }}</div>
+      <div class="stat-label">Exámenes Creados</div>
+    </div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-icon">
+      <span class="material-symbols-rounded" style="font-size:2.5rem;">check_circle</span>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{ total_presentaciones }}</div>
+      <div class="stat-label">Presentaciones Completadas</div>
+    </div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-icon">
+      <span class="material-symbols-rounded" style="font-size:2.5rem;">group</span>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{ progreso_estudiantes|length }}</div>
+      <div class="stat-label">Estudiantes Activos</div>
+    </div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-icon">
+      <span class="material-symbols-rounded" style="font-size:2.5rem;">trending_up</span>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">
+        {% if progreso_estudiantes %}
+          {{ "%.1f"|format((progreso_estudiantes|map(attribute='promedio')|sum) / (progreso_estudiantes|length)) }}%
+        {% else %}
+          0.0%
+        {% endif %}
+      </div>
+      <div class="stat-label">Promedio Global</div>
+    </div>
   </div>
 </div>
 
 <!-- Distribución de Calificaciones -->
 <div class="report-section">
-  <h3>📊 Distribución de Calificaciones</h3>
+  <h3>
+    <span class="material-symbols-rounded">bar_chart</span>
+    Distribución de Calificaciones
+  </h3>
   <div class="distribution-chart">
     <div class="distribution-bar">
       <div class="bar-segment excelente" 
@@ -89,7 +117,10 @@
 
 <!-- Estadísticas por Categoría -->
 <div class="report-section">
-  <h3>📚 Análisis por Categoría</h3>
+  <h3>
+    <span class="material-symbols-rounded">category</span>
+    Análisis por Categoría
+  </h3>
   <div class="categoria-grid">
     {% for stat in stats_por_categoria %}
       <div class="categoria-card">

@@ -240,7 +240,7 @@ def reporte_examenes():
     # Tendencia temporal (últimos 6 meses)
     hace_6_meses = datetime.now() - timedelta(days=180)
     tendencia_mensual = db.session.query(
-        func.strftime('%Y-%m', ExamenResultado.fecha_presentacion).label('mes'),
+        func.date_format(ExamenResultado.fecha_presentacion, '%Y-%m').label('mes'),
         func.count(ExamenResultado.id).label('total'),
         func.avg(ExamenResultado.calificacion).label('promedio')
     ).join(
@@ -250,7 +250,7 @@ def reporte_examenes():
         ExamenResultado.completado == True,
         ExamenResultado.fecha_presentacion >= hace_6_meses
     ).group_by(
-        func.strftime('%Y-%m', ExamenResultado.fecha_presentacion)
+        func.date_format(ExamenResultado.fecha_presentacion, '%Y-%m')
     ).order_by('mes').all()
     
     return render_template(
@@ -885,3 +885,25 @@ def ver_certificado(codigo):
         "certificado.html",
         certificado=certificado
     )
+
+@main_bp.route('/profesor/examen/<int:examen_id>/resultados', methods=['GET', 'POST'])
+@login_required
+@role_required('profesor')
+def profesor_resultados_examen(examen_id):
+    examen = Examen.query.get_or_404(examen_id)
+    if examen.profesor_id != current_user.id:
+        flash('No tienes permiso para ver los resultados de este examen.', 'danger')
+        return redirect(url_for('main.dashboard_profesor'))
+
+    if request.method == 'POST':
+        for resultado in examen.resultados:
+            comentario = request.form.get(f'comentario-{resultado.id}')
+            recomendaciones = request.form.get(f'recomendaciones-{resultado.id}')
+            resultado.comentario_profesor = comentario
+            resultado.recomendaciones = recomendaciones
+        db.session.commit()
+        flash('Comentarios guardados exitosamente.', 'success')
+        return redirect(url_for('main.profesor_resultados_examen', examen_id=examen.id))
+
+    resultados = ExamenResultado.query.filter_by(examen_id=examen.id).all()
+    return render_template('profesor/resultados_examen.html', examen=examen, resultados=resultados)

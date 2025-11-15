@@ -2,14 +2,19 @@
 {% block title %}Panel Profesor{% endblock %}
 {% block content %}
 <div class="dashboard-header">
-  <h2>👨‍🏫 Panel de Profesor</h2>
+  <h2>
+    <span class="material-symbols-rounded">school</span>
+    Panel de Profesor
+  </h2>
   <p class="welcome">Bienvenido/a, <strong>{{ current_user.username }}</strong></p>
 </div>
 
 <!-- Estadísticas Principales -->
 <div class="stats-grid">
   <div class="stat-card stat-primary">
-    <div class="stat-icon">📝</div>
+    <div class="stat-icon">
+      <span class="material-symbols-rounded" style="font-size:2.5rem;">quiz</span>
+    </div>
     <div class="stat-content">
       <div class="stat-value">{{ total_examenes }}</div>
       <div class="stat-label">Exámenes Creados</div>
@@ -17,7 +22,9 @@
   </div>
   
   <div class="stat-card stat-success">
-    <div class="stat-icon">❓</div>
+    <div class="stat-icon">
+      <span class="material-symbols-rounded" style="font-size:2.5rem;">help</span>
+    </div>
     <div class="stat-content">
       <div class="stat-value">{{ total_preguntas }}</div>
       <div class="stat-label">Preguntas Totales</div>
@@ -25,7 +32,9 @@
   </div>
   
   <div class="stat-card stat-info">
-    <div class="stat-icon">👥</div>
+    <div class="stat-icon">
+      <span class="material-symbols-rounded" style="font-size:2.5rem;">group</span>
+    </div>
     <div class="stat-content">
       <div class="stat-value">{{ total_estudiantes }}</div>
       <div class="stat-label">Estudiantes Activos</div>
@@ -33,7 +42,9 @@
   </div>
   
   <div class="stat-card stat-warning">
-    <div class="stat-icon">📊</div>
+    <div class="stat-icon">
+      <span class="material-symbols-rounded" style="font-size:2.5rem;">analytics</span>
+    </div>
     <div class="stat-content">
       <div class="stat-value">
         {% if stats_rendimiento.promedio %}
@@ -50,19 +61,26 @@
 <!-- Acciones Rápidas -->
 <div class="dashboard-grid">
   <div class="dashboard-card">
-    <h3>⚡ Acciones Rápidas</h3>
+    <h3>
+      <span class="material-symbols-rounded">bolt</span>
+      Acciones Rápidas
+    </h3>
     <div class="quick-actions">
       <a href="{{ url_for('profesor.crear_examen') }}" class="btn btn-primary btn-block">
-        ➕ Crear Nuevo Examen
+        <span class="material-symbols-rounded">add</span>
+        Crear Nuevo Examen
       </a>
       <a href="{{ url_for('profesor.lista_examenes') }}" class="btn btn-secondary btn-block">
-        📝 Ver Mis Exámenes
+        <span class="material-symbols-rounded">quiz</span>
+        Ver Mis Exámenes
       </a>
-      <a href="{{ url_for('main.reporte_examenes') }}" class="btn btn-block" style="background:#4caf50;color:#fff;">
-        📊 Ver Reportes y Análisis
+      <a href="{{ url_for('main.reporte_examenes') }}" class="btn btn-secondary btn-block">
+        <span class="material-symbols-rounded">analytics</span>
+        Ver Reportes y Análisis
       </a>
       <a href="{{ url_for('profesor.lista_estudiantes') }}" class="btn btn-secondary btn-block">
-        👥 Gestionar Estudiantes
+        <span class="material-symbols-rounded">group</span>
+        Gestionar Estudiantes
       </a>
     </div>
   </div>
