@@ -50,5 +50,32 @@
   </main>
 
   <footer class="footer">&copy; 2025 IFCES Plataforma Educativa</footer>
+
+{% if current_user.is_authenticated and current_user.is_estudiante %}
+<style>
+  .whatsapp-fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #25D366;
+    color: white;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    text-decoration: none;
+    z-index: 1000;
+  }
+  .whatsapp-fab .material-symbols-rounded {
+    font-size: 36px;
+  }
+</style>
+<a href="https://wa.me/573015775071" target="_blank" class="whatsapp-fab" title="Contactar por WhatsApp">
+  <span class="material-symbols-rounded">maps_ugc</span>
+</a>
+{% endif %}
 </body>
 </html>
