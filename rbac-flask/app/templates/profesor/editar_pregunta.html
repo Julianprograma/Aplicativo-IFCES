@@ -21,10 +21,18 @@
     </select>
   </div>
 
-  <div class="form-group">
-    <label for="puntos">Puntos *</label>
-    <input type="number" name="puntos" id="puntos" min="1" value="{{ pregunta.puntos }}" required class="form-control">
-  </div>
+<div class="col-md-6">
+                        <label for="puntos" class="form-label">
+                            <i class="bi bi-star"></i> Puntos
+                        </label>
+                        <input type="number" class="form-control" id="puntos" name="puntos" value="{{ pregunta.puntos }}" min="1" step="1" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="tiempo_estimado" class="form-label">
+                            <i class="bi bi-hourglass-split"></i> Tiempo Estimado (segundos)
+                        </label>
+                        <input type="number" class="form-control" id="tiempo_estimado" name="tiempo_estimado" value="{{ pregunta.tiempo_estimado }}" min="15" step="15" required>
+                    </div>
 
   <!-- Opciones para Opción Múltiple -->
   <div id="opcion_multiple_section" class="hidden-section">

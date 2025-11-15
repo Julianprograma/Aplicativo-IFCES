@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, case
 from datetime import datetime, timedelta
 import json
 import uuid
@@ -89,11 +89,18 @@ def dashboard_profesor():
         Examen.profesor_id == current_user.id
     ).first()
     
-    # Estudiantes con bajo rendimiento (promedio < 60)
+    # Estudiantes con bajo rendimiento (promedio < 3.0 en escala 0-5)
+    avg_calif_normalizada = func.avg(
+        case(
+            (ExamenResultado.calificacion > 5.0, ExamenResultado.calificacion / 20.0),
+            else_=ExamenResultado.calificacion
+        )
+    ).label('promedio')
+
     estudiantes_bajo_rendimiento = db.session.query(
         User.id,
         User.username,
-        func.avg(ExamenResultado.calificacion).label('promedio')
+        avg_calif_normalizada
     ).join(
         ExamenResultado, User.id == ExamenResultado.estudiante_id
     ).join(
@@ -101,7 +108,7 @@ def dashboard_profesor():
     ).filter(
         Examen.profesor_id == current_user.id
     ).group_by(User.id, User.username).having(
-        func.avg(ExamenResultado.calificacion) < 60
+        avg_calif_normalizada < 3.0
     ).limit(5).all()
     
     return render_template(
@@ -203,22 +210,32 @@ def reporte_examenes():
     
     # Calcular distribución por rangos
     rangos = {
-        'excelente': 0,  # 90-100
-        'bueno': 0,      # 70-89
-        'aceptable': 0,  # 60-69
-        'insuficiente': 0 # 0-59
+        'excelente': 0,  # 4.5-5.0
+        'bueno': 0,      # 3.5-4.49
+        'aceptable': 0,  # 3.0-3.49
+        'insuficiente': 0 # 0-2.99
     }
     
     for _, calificacion in rango_calificaciones:
         if calificacion is not None:
-            if calificacion >= 90:
-                rangos['excelente'] += 1
-            elif calificacion >= 70:
-                rangos['bueno'] += 1
-            elif calificacion >= 60:
-                rangos['aceptable'] += 1
-            else:
-                rangos['insuficiente'] += 1
+            if calificacion > 5.0: # Escala antigua 0-100
+                if calificacion >= 90:
+                    rangos['excelente'] += 1
+                elif calificacion >= 70:
+                    rangos['bueno'] += 1
+                elif calificacion >= 60:
+                    rangos['aceptable'] += 1
+                else:
+                    rangos['insuficiente'] += 1
+            else: # Nueva escala 0-5
+                if calificacion >= 4.5:
+                    rangos['excelente'] += 1
+                elif calificacion >= 3.5:
+                    rangos['bueno'] += 1
+                elif calificacion >= 3.0:
+                    rangos['aceptable'] += 1
+                else:
+                    rangos['insuficiente'] += 1
     
     # Tendencia temporal (últimos 6 meses)
     hace_6_meses = datetime.now() - timedelta(days=180)
@@ -337,8 +354,23 @@ def estudiante_resultados():
     # Calcular estadísticas
     if resultados:
         promedio = sum(r.calificacion for r in resultados) / len(resultados)
-        aprobados = sum(1 for r in resultados if r.calificacion >= (
-            r.examen.calificacion_minima or 60))
+        
+        aprobados = 0
+        for r in resultados:
+            calificacion_actual = r.calificacion
+            calif_minima = r.examen.calificacion_minima or 60
+
+            # Normalizar calificacion_actual a escala 0-5 si es necesario
+            if calificacion_actual > 5.0:
+                calificacion_actual = (calificacion_actual / 100) * 5.0
+
+            # Normalizar calif_minima a escala 0-5 si es necesario
+            if calif_minima > 5.0:
+                calif_minima = (calif_minima / 100) * 5.0
+            
+            if calificacion_actual >= calif_minima:
+                aprobados += 1
+        
         mejor_nota = max(r.calificacion for r in resultados)
     else:
         promedio = 0
@@ -420,6 +452,7 @@ def estudiante_enviar_examen(examen_id):
         
         # Guardar respuesta
         respuesta = Respuesta(
+            examen_id=examen.id,
             pregunta_id=pregunta.id,
             estudiante_id=current_user.id,
             respuesta_texto=respuesta_estudiante,
@@ -427,9 +460,9 @@ def estudiante_enviar_examen(examen_id):
         )
         respuestas_guardadas.append(respuesta)
     
-    # Calcular calificación porcentual
-    calificacion = (correctas / total_preguntas * 100) if (
-        total_preguntas > 0) else 0
+    # Calcular calificación de 0.0 a 5.0
+    calificacion = round((correctas / total_preguntas) * 5.0, 2) if (
+        total_preguntas > 0) else 0.0
     
     # Crear resultado
     resultado = ExamenResultado(
@@ -539,8 +572,22 @@ def estudiante_progreso_detallado():
     promedio_general = (sum(r.calificacion for r in resultados) / 
                        total_examenes) if total_examenes > 0 else 0
     mejor_calificacion = max((r.calificacion for r in resultados), default=0)
-    examenes_aprobados = sum(1 for r in resultados 
-                            if r.calificacion >= (r.examen.calificacion_minima or 60))
+    
+    examenes_aprobados = 0
+    for r in resultados:
+        calificacion_actual = r.calificacion
+        calif_minima = r.examen.calificacion_minima or 60
+
+        # Normalizar calificacion_actual a escala 0-5 si es necesario
+        if calificacion_actual > 5.0:
+            calificacion_actual = (calificacion_actual / 100) * 5.0
+
+        # Normalizar calif_minima a escala 0-5 si es necesario
+        if calif_minima > 5.0:
+            calif_minima = (calif_minima / 100) * 5.0
+        
+        if calificacion_actual >= calif_minima:
+            examenes_aprobados += 1
     
     return render_template(
         "estudiante/progreso_detallado.html",
@@ -685,9 +732,9 @@ def estudiante_enviar_practica(examen_id):
             'explicacion': pregunta.explicacion
         })
     
-    # Calcular calificación porcentual
-    calificacion = (correctas / total_preguntas * 100) if (
-        total_preguntas > 0) else 0
+    # Calcular calificación de 0.0 a 5.0
+    calificacion = round((correctas / total_preguntas) * 5.0, 2) if (
+        total_preguntas > 0) else 0.0
     
     return jsonify({
         "success": True,
@@ -767,8 +814,18 @@ def generar_certificado(resultado_id):
         return jsonify({"error": "No autorizado"}), 403
     
     # Verificar que haya aprobado
-    calificacion_minima = resultado.examen.calificacion_minima or 60
-    if resultado.calificacion < calificacion_minima:
+    calificacion_actual = resultado.calificacion
+    calif_minima = resultado.examen.calificacion_minima or 60
+
+    # Normalizar calificacion_actual a escala 0-5 si es necesario
+    if calificacion_actual > 5.0:
+        calificacion_actual = (calificacion_actual / 100) * 5.0
+
+    # Normalizar calif_minima a escala 0-5 si es necesario
+    if calif_minima > 5.0:
+        calif_minima = (calif_minima / 100) * 5.0
+    
+    if calificacion_actual < calif_minima:
         return jsonify({"error": "Debes aprobar el examen para obtener el certificado"}), 400
     
     # Verificar si ya tiene certificado

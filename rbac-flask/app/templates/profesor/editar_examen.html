@@ -55,7 +55,18 @@
 
       <div class="form-group">
         <label for="calificacion_minima">Calificación mínima para aprobar (%)</label>
-        <input type="number" name="calificacion_minima" id="calificacion_minima" min="0" max="100" step="0.1" class="form-control" value="{{ examen.calificacion_minima or 60.0 }}">
+        <div class="col-md-6">
+                        <label for="duracion_minutos" class="form-label">
+                            <i class="bi bi-clock"></i> Duración (minutos)
+                        </label>
+                        <input type="number" class="form-control" id="duracion_minutos" name="duracion_minutos" value="{{ examen.duracion_minutos }}" min="10" step="5" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="calificacion_minima" class="form-label">
+                            <i class="bi bi-check-circle"></i> Calificación Mínima para Aprobar (%)
+                        </label>
+                        <input type="number" class="form-control" id="calificacion_minima" name="calificacion_minima" value="{{ examen.calificacion_minima }}" min="0" max="100" step="5" required>
+                    </div>
         <small>Porcentaje mínimo para considerar aprobado</small>
       </div>
 

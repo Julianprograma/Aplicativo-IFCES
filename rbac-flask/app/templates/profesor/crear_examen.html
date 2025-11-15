@@ -45,11 +45,18 @@
       <legend>⏱️ Configuración de Tiempo</legend>
       
       <div class="form-row">
-        <div class="input-group">
-          <label for="duracion_minutos">Duración (minutos)</label>
-          <input id="duracion_minutos" name="duracion_minutos" type="number" min="5" value="60" />
-          <small>Tiempo máximo para completar el examen</small>
-        </div>
+<div class="col-md-6">
+                        <label for="duracion_minutos" class="form-label">
+                            <i class="bi bi-clock"></i> Duración (minutos)
+                        </label>
+                        <input type="number" class="form-control" id="duracion_minutos" name="duracion_minutos" value="60" min="10" step="5" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="calificacion_minima" class="form-label">
+                            <i class="bi bi-check-circle"></i> Calificación Mínima para Aprobar (%)
+                        </label>
+                        <input type="number" class="form-control" id="calificacion_minima" name="calificacion_minima" value="60" min="0" max="100" step="5" required>
+                    </div>
         
         <div class="input-group">
           <label for="fecha_limite">Fecha Límite</label>
