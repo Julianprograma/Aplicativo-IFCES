@@ -14,7 +14,7 @@
 </head>
 <body>
   <nav class="navbar">
-    <div class="brand">IFCES</div>
+    <div class="brand">ICFES</div>
     <ul class="nav-links">
       <li><a href="/">Inicio</a></li>
       {% if current_user.is_authenticated %}
@@ -49,7 +49,7 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="footer">&copy; 2025 IFCES Plataforma Educativa</footer>
+  <footer class="footer">&copy; 2025 ICFES Plataforma Educativa</footer>
 
 {% if current_user.is_authenticated and current_user.is_estudiante %}
 <style>
